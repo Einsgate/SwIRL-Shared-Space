@@ -1,0 +1,9 @@
+{% extends "base.html" %}  
+{% block content %}
+{% for post in posts %}  
+<h1>{{ post.id}}</h1>  
+<p>{{ post.role_name }}</p>
+<p>{{ post.description }}</p>
+<p>{{ post.insert_time|date:"1, F jS"}}</p>
+{% endfor %}  
+{% endblock %}
