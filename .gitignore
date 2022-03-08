@@ -1,5 +1,5 @@
 # Static resourses #
-static/
+#static/
 
 # Django #
 *.log
