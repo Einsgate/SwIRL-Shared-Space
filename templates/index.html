@@ -116,7 +116,7 @@
             <div class="wrapper wrapper-content">
                 <div class="row animated fadeInDown">
                     <div class="col-lg-12">
-                            <div class="ibox float-e-margins">
+                        <div class="ibox float-e-margins">
                             <div class="ibox-title">
                                 <h5>Layout</h5>
                             </div>
@@ -124,14 +124,13 @@
                                 <img src="/static/img/layout.jpg" alt="layout">
                             </div>
                         </div>
-                        </div>
+                    </div>
                 </div>
-    
                 <div class="row animated fadeInDown">
                     <div class="col-lg-3">
                         <div class="ibox float-e-margins">
                             <div class="ibox-title">
-                                <h5>可拖动事件</h5>
+                                <h5>Space</h5>
                                 <div class="ibox-tools">
                                     <a class="collapse-link">
                                         <i class="fa fa-chevron-up"></i>
@@ -140,9 +139,9 @@
                                         <i class="fa fa-wrench"></i>
                                     </a>
                                     <ul class="dropdown-menu dropdown-user">
-                                        <li><a href="#">选项 1</a>
+                                        <li><a href="#">Choice 1</a>
                                         </li>
-                                        <li><a href="#">选项 2</a>
+                                        <li><a href="#">Choice 2</a>
                                         </li>
                                     </ul>
                                     <a class="close-link">
@@ -152,20 +151,62 @@
                             </div>
                             <div class="ibox-content">
                                 <div id="external-events">
-                                    <p>拖动事件并进入日历</p>
+                                    <p>Drag the event and enter the calendar</p>
                                     
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; z-index: auto; left: 0px; top: 0px;">吃饭</div>
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative;">购物</div>
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative;">女友</div>
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative;">鲜花</div>
+                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; z-index: auto; left: 0px; top: 0px; background-color: #f8ac59;" data-color='#f8ac59'>Space 1</div>
+                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #f8ac59;" data-color='#f8ac59'>Space 2</div>
+                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #f8ac59;" data-color='#f8ac59'>Space 3</div>
+                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #f8ac59;" data-color='#f8ac59'>Space 4</div>
+                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #f8ac59;" data-color='#f8ac59'>Space 5</div>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="ibox float-e-margins">
+                            <div class="ibox-title">
+                                <h5>Reservation</h5>
+                                <div class="ibox-tools">
+                                    <a class="collapse-link">
+                                        <i class="fa fa-chevron-up"></i>
+                                    </a>
+                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                        <i class="fa fa-wrench"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-user">
+                                        <li><a href="#">Short-Term Reservation</a>
+                                        </li>
+                                        <li><a href="#">Long-Term Reservation</a>
+                                        </li>
+                                    </ul>
+                                    <a class="close-link">
+                                        <i class="fa fa-times"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="ibox-content">
+                                <form role="form">
+                                    <div class="form-group"><label>Title</label> <input type="text" class="form-control"></div>
+                                    <div class="hr-line-dashed"></div>
+                                    <div class="form-group">
+                                        <label>Type</label> 
+                                        <div class="i-checks"><label> <input type="radio" value="quiet" name="a"> <i></i> closed </label></div>
+                                        <div class="i-checks"><label> <input type="radio" value="option2" name="a"> <i></i> open </label></div>
+                                        <div class="i-checks"><label> <input type="radio" value="" name="a"> <i></i> quiet </label></div>
+                                    </div>
+                                    <div class="hr-line-dashed"></div>
+                                    <div class="form-group"><label>Description</label> <input type="text" class="form-control"  style="height:100px"></div>
+                                    <div class="hr-line-dashed"></div>
+                                    <div class="form-group">
+                                        <button class="btn btn-primary" type="submit">Submit</button>
+                                        <button class="btn btn-white pull-right" type="submit">Reset</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                     <div class="col-lg-9">
                         <div class="ibox float-e-margins">
                             <div class="ibox-title">
-                                <h5>日历表 </h5>
+                                <h5>Reserve Calendar </h5>
                                 <div class="ibox-tools">
                                     <a class="collapse-link">
                                         <i class="fa fa-chevron-up"></i>
@@ -174,9 +215,9 @@
                                         <i class="fa fa-wrench"></i>
                                     </a>
                                     <ul class="dropdown-menu dropdown-user">
-                                        <li><a href="#">选项 1</a>
+                                        <li><a href="#">Choice 1</a>
                                         </li>
-                                        <li><a href="#">选项 2</a>
+                                        <li><a href="#">Choice 2</a>
                                         </li>
                                     </ul>
                                     <a class="close-link">
@@ -190,7 +231,6 @@
                         </div>
                     </div>
                 </div>
-    
             </div>
             <div class="footer">
                 <div class="pull-right">
@@ -336,7 +376,8 @@
                 // store data so the calendar knows to render an event upon drop
                 $(this).data('event', {
                     title: $.trim($(this).text()), // use the element's text as the event title
-                    stick: true // maintain when user navigates (see docs on the renderEvent method)
+                    stick: true, // maintain when user navigates (see docs on the renderEvent method)
+                    color: $(this).data('color')
                 });
 
                 // make the event draggable using jQuery UI
@@ -372,42 +413,43 @@
                     }
                 },
                 events: [{
-                    title: '全天活动',
+                    title: 'event1',
                     start: new Date(y, m, 1)
                 }, {
-                    title: '长事件',
+                    title: 'long event',
                     start: new Date(y, m, d - 5),
                     end: new Date(y, m, d - 2)
                 }, {
                     id: 999,
-                    title: '重复事件',
+                    title: 'repeat event',
                     start: new Date(y, m, d - 3, 16, 0),
                     allDay: false
                 }, {
                     id: 999,
-                    title: '重复事件',
+                    title: 'repeat event',
                     start: new Date(y, m, d + 4, 16, 0),
                     allDay: false
                 }, {
-                    title: '会议',
+                    title: 'meeting',
                     start: new Date(y, m, d, 10, 30),
                     allDay: false
                 }, {
-                    title: '午餐',
+                    title: 'lunch',
                     start: new Date(y, m, d, 12, 0),
                     end: new Date(y, m, d, 14, 0),
                     allDay: false
                 }, {
-                    title: '生日聚会',
+                    title: 'party',
                     start: new Date(y, m, d + 1, 19, 0),
                     end: new Date(y, m, d + 1, 22, 30),
                     allDay: false
                 }, {
-                    title: '点击Google',
+                    title: 'click Google',
                     start: new Date(y, m, 28),
                     end: new Date(y, m, 29),
                     url: 'http://google.com/'
-                }]
+                }], 
+                eventColor: '#1ab394'
             });
 
 
