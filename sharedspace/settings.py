@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'behave_django',
     'reservation.apps.ReservationConfig',
     'django.contrib.admin',
     'django.contrib.auth',
