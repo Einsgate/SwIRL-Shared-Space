@@ -495,10 +495,9 @@
             window.confirm( reserve_title + ' at ' + reserve_event.title + ' from ' + reserve_start_time.toLocaleString() + ' to ' + reserve_end_time.toLocaleString() + '?');
             
             $.ajax({
-                url: '{% url "create_reservation" %}',
+                url: '{% url "reservation_create" %}',
                 type: "POST",
-                data: {
-                    csrfmiddlewaretoken: "{{ csrf_token }}",   // < here 
+                data: JSON.stringify({ 
                     title: reserve_title,  
                     reservation_type: reserve_type, 
                     description: reserve_desc, 
@@ -506,7 +505,7 @@
                     start_time: reserve_start_time, 
                     end_time: reserve_end_time, 
                     user_id: reserve_user_id
-                },
+                }),
                 success: function(data) {
                     console.log(data);
                     if (data.error_code == 0) {
