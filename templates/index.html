@@ -183,20 +183,22 @@
                                 </div>
                             </div>
                             <div class="ibox-content">
-                                <form role="form">
-                                    <div class="form-group"><label>Title</label> <input type="text" class="form-control"></div>
+                                <form role="form" id="reserve-form">
+                                    <div class="form-group"><label>Title</label> <input type="text" class="form-control" id="reserve-title"></div>
                                     <div class="hr-line-dashed"></div>
                                     <div class="form-group">
                                         <label>Type</label> 
-                                        <div class="i-checks"><label> <input type="radio" value="quiet" name="a"> <i></i> closed </label></div>
-                                        <div class="i-checks"><label> <input type="radio" value="option2" name="a"> <i></i> open </label></div>
-                                        <div class="i-checks"><label> <input type="radio" value="" name="a"> <i></i> quiet </label></div>
+                                        <select class="form-control m-b" id="reserve-type">
+                                            <option>closed</option>
+                                            <option>quiet</option>
+                                            <option>open</option>
+                                        </select>
                                     </div>
                                     <div class="hr-line-dashed"></div>
-                                    <div class="form-group"><label>Description</label> <input type="text" class="form-control"  style="height:100px"></div>
+                                    <div class="form-group"><label>Description</label> <textarea class="form-control" rows="5" id="reserve-description"></textarea> </div>
                                     <div class="hr-line-dashed"></div>
                                     <div class="form-group">
-                                        <button class="btn btn-primary" type="submit">Submit</button>
+                                        <button class="btn btn-primary" type="submit" id="reserve-button">Submit</button>
                                         <button class="btn btn-white pull-right" type="submit">Reset</button>
                                     </div>
                                 </form>
@@ -362,11 +364,6 @@
     <script>
         $(document).ready(function() {
 
-            $('.i-checks').iCheck({
-                checkboxClass: 'icheckbox_square-green',
-                radioClass: 'iradio_square-green'
-            });
-
             /* initialize the external events
              -----------------------------------------------------------------*/
 
@@ -375,9 +372,11 @@
 
                 // store data so the calendar knows to render an event upon drop
                 $(this).data('event', {
+                    id: "new-event", 
                     title: $.trim($(this).text()), // use the element's text as the event title
                     stick: true, // maintain when user navigates (see docs on the renderEvent method)
-                    color: $(this).data('color')
+                    color: $(this).data('color'), 
+                    editable: true
                 });
 
                 // make the event draggable using jQuery UI
@@ -403,15 +402,8 @@
                     center: 'title',
                     right: 'month,agendaWeek,agendaDay'
                 },
-                editable: true,
+                editable: false,
                 droppable: true, // this allows things to be dropped onto the calendar
-                drop: function() {
-                    // is the "remove after drop" checkbox checked?
-                    if ($('#drop-remove').is(':checked')) {
-                        // if so, remove the element from the "Draggable Events" list
-                        $(this).remove();
-                    }
-                },
                 events: [{
                     title: 'zone 1',
                     start: new Date(y, m, 1)
@@ -444,7 +436,12 @@
                     end: new Date(y, m, 29),
                     url: 'http://google.com/'
                 }], 
-                eventColor: '#1ab394'
+                eventColor: '#1ab394', 
+                
+                eventRender: function ( event, element ) {
+                    element.attr( 'id', event.id );
+                }, 
+                
             });
 
 
@@ -453,6 +450,74 @@
     <script type="text/javascript">
         var cnzz_protocol = (("https:" == document.location.protocol) ? "https://" : "http://");
         document.write(unescape("%3Cspan id='cnzz_stat_icon_1278138285'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "v1.cnzz.com/z_stat.php%3Fid%3D1278138285%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    
+    <script>
+        $("#reserve-form").on("submit", function(){
+
+            var reserve_title = document.getElementById("reserve-title").value;
+            var reserve_type = document.getElementById("reserve-type").selectedIndex;
+            var reserve_desc = document.getElementById("reserve-description").value;
+            
+            var reserve_events = $('#calendar').fullCalendar( 'clientEvents', ['new-event'])
+            
+            if (reserve_events.length > 1) {
+                alert("You make more than one reservations!");
+                location.reload(true);
+                return;
+            }
+            if (reserve_events.length == 0) {
+                alert("You haven't made any reservations!");
+                location.reload(true);
+                return;
+            }
+                
+            var reserve_event = reserve_events[0];
+            
+            if (reserve_event.allDay) {
+                alert("You should specify the start time and end time!");
+                return;
+            }
+            
+            var reserve_zone_id = (reserve_event.title).replace(/[^0-9]/ig,"");
+            var reserve_start_time = new Date(reserve_event.start.toISOString());
+            var reserve_end_time;
+            
+            if (reserve_event.end == null) {
+                reserve_end_time = new Date(reserve_event.start.toISOString());
+                reserve_end_time.setHours(reserve_start_time.getHours() + 2);
+            } else {
+                reserve_end_time = new Date(reserve_event.end.toISOString());
+            }
+            
+            var reserve_user_id = 1;
+            
+            window.confirm( reserve_title + ' at ' + reserve_event.title + ' from ' + reserve_start_time.toLocaleString() + ' to ' + reserve_end_time.toLocaleString() + '?');
+            
+            $.ajax({
+                url: '{% url "create_reservation" %}',
+                type: "POST",
+                data: {
+                    csrfmiddlewaretoken: "{{ csrf_token }}",   // < here 
+                    title: reserve_title,  
+                    reservation_type: reserve_type, 
+                    description: reserve_desc, 
+                    zone_id: reserve_zone_id, 
+                    start_time: reserve_start_time, 
+                    end_time: reserve_end_time, 
+                    user_id: reserve_user_id
+                },
+                success: function(data) {
+                    console.log(data);
+                    if (data.error_code == 0) {
+                        alert("SUCCESS");
+                    } else {
+                        alert("Oops! We have encountered an error " + data.error_msg + "!");
+                    }
+                },
+           });
+
+       });
     </script>
 
 </body>

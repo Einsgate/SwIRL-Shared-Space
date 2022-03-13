@@ -15,9 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from sharedspace     import views
 
 urlpatterns = [
     path('', include('reservation.urls')),
     path('reservation/', include('reservation.urls')),
     path('admin/', admin.site.urls),
+    path('reservation/create', views.create_reservation, name='create_reservation'),
 ]
