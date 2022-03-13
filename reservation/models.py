@@ -30,6 +30,14 @@ class Reservation(models.Model):
             return True
         else:
             return False    
+            
+    @staticmethod
+    def list_all(user_id = 0):
+        return Reservation.objects.filter(user_id = user_id)
+        
+    @staticmethod
+    def delete(id = 0):
+        Reservation.objects.get(id = id).delete()
         
     
 class User(models.Model):
