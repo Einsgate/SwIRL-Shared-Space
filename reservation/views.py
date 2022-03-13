@@ -1,7 +1,8 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
 import json
 from django.utils.dateparse import parse_datetime
@@ -17,13 +18,14 @@ def index(request):
 # {
 # user_id: ...    
 #}
+@csrf_exempt 
 def reservation_create(request):
     if request.method == 'POST':
-        params = json.load(request.body)
+        params = json.loads(request.body)
         
         # Check required fields
-        if 'title' not in params or 'type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
-            return render(request, 'index.html', {
+        if 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
+            return JsonResponse({
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
@@ -33,21 +35,21 @@ def reservation_create(request):
         reservation = Reservation(title = params['title'], reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
             end_time = parse_datetime(params['end_time']), user_id = params['user_id'])
         if not reservation.is_valid():
-            return render(request, 'index.html', {
+            return JsonResponse({
                 "error_code": ERR_VALUE_ERROR_CODE,
                 "error_msg": ERR_VALUE_ERROR_MSG
             })
             
         # Check conflicts
         if reservation.has_confliction():
-            return render(request, 'index.html', {
+            return JsonResponse({
                 "error_code": ERR_RESERVATION_CONFLICT_CODE,
                 "error_msg": ERR_RESERVATION_CONFLICT_MSG
             })
             
         # Create reservation
         reservation.save()
-        return render(request, 'index.html', {
+        return JsonResponse({
             "error_code": 0,
             "id": reservation.id
         })
