@@ -13,7 +13,7 @@ class Reservation(models.Model):
     #is_long_term = models.IntegerField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    reservation_type = models.IntegerField(default = -1)
+    reservation_type = models.IntegerField()
     
     def is_valid(self):
         if self.reservation_type < 0 or self.reservation_type > 2 or not self.start_time or not self.end_time or self.start_time >= self.end_time or self.user_id != 1:
@@ -23,9 +23,9 @@ class Reservation(models.Model):
             
     def has_confliction(self):
         # Find all reservations that 
-        # start_time < self.end_time AND end_time > self.start_time AND (zone_id = self.zone_id OR reservation_type < self.reservation_type)
+        # start_time < self.end_time AND end_time > self.start_time AND (zone_id = self.zone_id OR reservation_type != self.reservation_type)
         conflict_reservations = Reservation.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time), 
-            Q(zone_id__exact = self.zone_id) | Q(reservation_type__lt = self.reservation_type))
+            Q(zone_id__exact = self.zone_id) | ~Q(reservation_type = self.reservation_type))
         if len(conflict_reservations) > 0:
             return True
         else:

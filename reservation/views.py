@@ -58,12 +58,12 @@ def reservation_list(request):
         
         # Check required fields
         if 'user_id' not in params:
-            return render(request, 'index.html', {
+            return render(request, 'reservation_list.html', {
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
             
-        return render(request, 'index.html', {
+        return render(request, 'reservation_list.html', {
             "error_code": 0,
             "results": Reservation.list_all(params['user_id'])
         })
