@@ -510,6 +510,7 @@
                 return false;
             }
             else if (reservations.length == 0) {
+                alert("empty");
                 return false;
             }
                 
@@ -553,9 +554,9 @@
             var user_id = 1;
             var ret = true;
             
-            if(!confirm('Make an reservation from ' + start_time.toLocaleString() + ' to ' + end_time.toLocaleString() + '?')){
-		        return false;
-			}
+//             if(!confirm('Make an reservation from ' + start_time.toLocaleString() + ' to ' + end_time.toLocaleString() + '?')){
+// 		        return false;
+// 			}
             
             $.ajax({
                 url: '{% url "reservation_create" %}',
