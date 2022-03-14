@@ -4,10 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "==3.2.12"
-behave_django = "==1.4.0"
-selenium = "==3.141.0"
-factory_boy ="3.2.1"
+django = "3.2.12"
+behave_django = "1.4.0"
+selenium = "3.141.0"
+factory_boy = "3.2.1"
+webdriver-manager = "3.5.3"
 
 [dev-packages]
 

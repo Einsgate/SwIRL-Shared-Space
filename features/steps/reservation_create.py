@@ -8,13 +8,17 @@ from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 # from test.factories.user import UserFactory
 # import selenium as se
+from selenium.webdriver.common.alert import Alert
 
 @given('Create zone one open reservation')
 def step_impl(context):
     br = context.browser
 
-    # Login to the Admin Panel
-    br.get(context.base_url + "/reservation/create/")
+    # Go to the Panel
+    # print("L17: ", context.base_url)
+    # br.get(context.base_url + "reservation/create/")
+    # br.get(context.base_url + "reservation/")
+    br.get(context.base_url)
     
     # br = context.browser
     # br.get(context.base_url + "reservation/create/")
@@ -32,12 +36,14 @@ def step_impl(context):
     br.find_element_by_xpath('//*[@id="page-wrapper"]/div[2]/div[2]/div[1]/div[2]/div[2]/form/div[1]/input').send_keys('test1') # title
     br.find_element_by_xpath('//*[@id="page-wrapper"]/div[2]/div[2]/div[1]/div[2]/div[2]/form/div[3]/div[2]/label/div').click() # option open
     br.find_element_by_xpath('//*[@id="page-wrapper"]/div[2]/div[2]/div[1]/div[2]/div[2]/form/div[7]/button[1]').click() # submit
-	
+    print("L38: ", br.current_url) # http://localhost:35831/?a=option2
+    assert br.current_url.endswith('/reservation/create/')
 
 @when('I submit a zone one reservation')
 def step_impl(context):
     br = context.browser
-    br.get(context.base_url + '/reservation/create/')
+    # br.get(br.current_url + '/reservation/create/')
+    # br.get(context.base_url)
     # assert br.find_element_by_name('csrfmiddlewaretoken').is_enabled()
     actions = ActionChains(br)
     br.find_element_by_xpath('//*[@id="calendar"]/div[1]/div[2]/div/button[1]').click() # click on month
@@ -56,4 +62,6 @@ def step_impl(context):
 @then('I am received error message')
 def step_impl(context):
     br = context.browser
-    assert True
+    alert = Alert(br)
+    assert alert.text == "Conflit with existing reservations"
+    alert.accept()
