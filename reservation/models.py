@@ -8,9 +8,10 @@ class Reservation(models.Model):
     title = models.CharField(max_length = 50, default = 'untitled')
     description = models.CharField(max_length = 255, default = '')
     zone_id = models.IntegerField(default = 0)
+    zone_name = models.CharField(max_length = 50, default = "noname")
     user_id = models.IntegerField(default = 0)
     team_id = models.IntegerField(default = 0)
-    #is_long_term = models.IntegerField()
+    is_long_term = models.BooleanField(default = False)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     reservation_type = models.IntegerField()
@@ -33,11 +34,14 @@ class Reservation(models.Model):
             
     @staticmethod
     def list_all(user_id = 0):
-        return Reservation.objects.filter(user_id = user_id)
+        if user_id == 0:
+            return Reservation.objects.all()
+        else:
+            return Reservation.objects.filter(user_id = user_id)
         
     @staticmethod
     def delete(id = 0):
-        Reservation.objects.get(id = id).delete()
+        Reservation.objects.filter(id = id).delete()
         
     
 class User(models.Model):
@@ -80,7 +84,11 @@ class TrainingDetail(models.Model):
     
 class Zone(models.Model):
     id = models.IntegerField(primary_key = True)
-    is_noisy = models.IntegerField()
-    description = models.CharField(max_length = 1000)
-    zone_type = models.IntegerField()
+    name = models.CharField(max_length = 50, default = "noname")
+    is_noisy = models.BooleanField(default = False)
+    description = models.CharField(max_length = 500, default = "")
+    zone_type = models.IntegerField(default = 1)
     
+    @staticmethod
+    def list_all():
+        return Zone.objects.all().order_by("id")

@@ -135,15 +135,8 @@
                                     <a class="collapse-link">
                                         <i class="fa fa-chevron-up"></i>
                                     </a>
-                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                        <i class="fa fa-wrench"></i>
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-user">
-                                        <li><a href="#">Choice 1</a>
-                                        </li>
-                                        <li><a href="#">Choice 2</a>
-                                        </li>
-                                    </ul>
+                                    
+                                    
                                     <a class="close-link">
                                         <i class="fa fa-times"></i>
                                     </a>
@@ -153,11 +146,10 @@
                                 <div id="external-events">
                                     <p>Drag an event and enter the calendar.</p>
                                     
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; z-index: auto; left: 0px; top: 0px; background-color: #f8ac59;" data-color='#f8ac59'>Zone 1</div>
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #f8ac59;" data-color='#f8ac59'>Zone 2</div>
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #f8ac59;" data-color='#f8ac59'>Zone 3</div>
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #f8ac59;" data-color='#f8ac59'>Zone 4</div>
-                                    <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #f8ac59;" data-color='#f8ac59'>Zone 5</div>
+                                    {% for zone in zone_list %}
+                                        <!--<div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; z-index: auto; left: 0px; top: 0px; background-color: #f8ac59;" data-color='#f8ac59'>Zone 1</div>-->
+                                        <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #1ab394;" data-color='#1ab394' id='{{ zone.id }}'>{{ zone.name }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
@@ -183,23 +175,23 @@
                                 </div>
                             </div>
                             <div class="ibox-content">
-                                <form role="form" id="reserve-form">
-                                    <div class="form-group"><label>Title</label> <input type="text" class="form-control" id="reserve-title"></div>
+                                <form role="form" id="reservation-form">
+                                    <div class="form-group"><label>Title</label> <input type="text" class="form-control" id="reservation-title" placeholder="untitled"></div>
                                     <div class="hr-line-dashed"></div>
                                     <div class="form-group">
                                         <label>Type</label> 
-                                        <select class="form-control m-b" id="reserve-type">
+                                        <select class="form-control m-b" id="reservation-type">
                                             <option>closed</option>
                                             <option>quiet</option>
-                                            <option>open</option>
+                                            <option selected="selected">open</option>
                                         </select>
                                     </div>
                                     <div class="hr-line-dashed"></div>
-                                    <div class="form-group"><label>Description</label> <textarea class="form-control" rows="5" id="reserve-description"></textarea> </div>
+                                    <div class="form-group"><label>Description</label> <textarea class="form-control" rows="5" id="reservation-description"></textarea> </div>
                                     <div class="hr-line-dashed"></div>
                                     <div class="form-group">
-                                        <button class="btn btn-primary" type="submit" id="reserve-button">Submit</button>
-                                        <button class="btn btn-white pull-right" type="submit">Reset</button>
+                                        <button class="btn btn-primary" type="submit" id="reservation-button">Submit</button>
+                                        <button class="btn btn-white pull-right" type="reset" id="reservation-reset-button">Reset</button>
                                     </div>
                                 </form>
                             </div>
@@ -208,20 +200,12 @@
                     <div class="col-lg-9">
                         <div class="ibox float-e-margins">
                             <div class="ibox-title">
-                                <h5>Reservation Calendar </h5>
+                                <h5>Reservation Date </h5>
                                 <div class="ibox-tools">
                                     <a class="collapse-link">
                                         <i class="fa fa-chevron-up"></i>
                                     </a>
-                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" aria-expanded="false">
-                                        <i class="fa fa-wrench"></i>
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-user">
-                                        <li><a href="#">Choice 1</a>
-                                        </li>
-                                        <li><a href="#">Choice 2</a>
-                                        </li>
-                                    </ul>
+                                    
                                     <a class="close-link">
                                         <i class="fa fa-times"></i>
                                     </a>
@@ -276,7 +260,7 @@
                     type: 'line',
                     width: '100%',
                     height: '50',
-                    lineColor: '#1ab394',
+                    lineColor: '#f8ac59',
                     fillColor: "transparent"
                 });
 
@@ -284,7 +268,7 @@
                     type: 'line',
                     width: '100%',
                     height: '50',
-                    lineColor: '#1ab394',
+                    lineColor: '#f8ac59',
                     fillColor: "transparent"
                 });
 
@@ -340,7 +324,7 @@
                             borderWidth: 2,
                             color: 'transparent'
                         },
-                        colors: ["#1ab394", "#1C84C6"],
+                        colors: ["#f8ac59", "#1C84C6"],
                         xaxis:{
                         },
                         yaxis: {
@@ -372,8 +356,9 @@
 
                 // store data so the calendar knows to render an event upon drop
                 $(this).data('event', {
-                    id: "new-event", 
+                    is_new: "new", 
                     title: $.trim($(this).text()), // use the element's text as the event title
+                    zone_id: $(this).attr('id'),
                     stick: true, // maintain when user navigates (see docs on the renderEvent method)
                     color: $(this).data('color'), 
                     editable: true
@@ -395,8 +380,32 @@
             var d = date.getDate();
             var m = date.getMonth();
             var y = date.getFullYear();
+            var results = [];
+            
+            $.ajax({
+                url: '{% url "reservation_list" %}',
+                type: "GET",
+                success: function(data) {
+                    if (data.error_code == 0) {
+                        jQuery.each(data.results, function (i, item) {
+                            results.push({
+                                title: item.zone_name,
+                                start: new Date(item.start_time),
+                                end: new Date(item.end_time),
+                                allDay: item.is_long_term,
+                                timezone: "America/Chicago",
+                            });
+                        });
+                        $('#calendar').fullCalendar('addEventSource', results);
+                    }
+                },
+            });
 
+
+            var reservation_counter = 0;
+            var reservation_limit = 1;
             $('#calendar').fullCalendar({
+                //timezone: false,
                 header: {
                     left: 'prev,next today',
                     center: 'title',
@@ -404,45 +413,26 @@
                 },
                 editable: false,
                 droppable: true, // this allows things to be dropped onto the calendar
-                events: [{
-                    title: 'zone 1',
-                    start: new Date(y, m, 1)
-                }, {
-                    title: 'zone 2',
-                    start: new Date(y, m, d - 5),
-                    end: new Date(y, m, d - 2)
-                }, {
-                    id: 999,
-                    title: 'zone 3',
-                    start: new Date(y, m, d - 3, 16, 0),
-                    allDay: false
-                }, {
-                    id: 999,
-                    title: 'zone 3',
-                    start: new Date(y, m, d + 4, 16, 0),
-                    allDay: false
-                }, {
-                    title: 'zone 4',
-                    start: new Date(y, m, d, 10, 30),
-                    allDay: false
-                }, {
-                    title: 'zone 5',
-                    start: new Date(y, m, d + 1, 19, 0),
-                    end: new Date(y, m, d + 1, 22, 30),
-                    allDay: false
-                }, {
-                    title: 'zone 6',
-                    start: new Date(y, m, 28),
-                    end: new Date(y, m, 29),
-                    url: 'http://google.com/'
-                }], 
-                eventColor: '#1ab394', 
+                //events: results, 
+                eventColor: '#f8ac59', 
+                
+                drop: function() {
+                    reservation_counter++;
+                    if (reservation_counter >= reservation_limit) {
+                        //alert('limit reached!');
+                        $(this).droppable("disable");
+                    }
+                },
                 
                 eventRender: function ( event, element ) {
                     element.attr( 'id', event.id );
                 }, 
                 
             });
+
+            $('#calendar').fullCalendar('option', 'timezone', 'local');
+
+            
 
 
         });
@@ -453,58 +443,85 @@
     </script>
     
     <script>
-        $("#reserve-form").on("submit", function(){
-
-            var reserve_title = document.getElementById("reserve-title").value;
-            var reserve_type = document.getElementById("reserve-type").selectedIndex;
-            var reserve_desc = document.getElementById("reserve-description").value;
+        $("#reservation-reset-button").on("click", function() {
+            window.location.reload();
+        })
+    
+        $("#reservation-form").on("submit", function(){
+        
+            var title = document.getElementById("reservation-title").value;
+            var reservation_type = document.getElementById("reservation-type").selectedIndex;
+            var description = document.getElementById("reservation-description").value;
             
-            var reserve_events = $('#calendar').fullCalendar( 'clientEvents', ['new-event'])
+            var reservations = $('#calendar').fullCalendar( 'clientEvents', function(event) {
+                if (event.is_new == 'new') {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            });
             
-            if (reserve_events.length > 1) {
-                alert("You make more than one reservations!");
-                location.reload(true);
-                return;
+            if (reservations.length > 1) {
+                alert("You can only make 1 reservation each time!");
+                //location.reload(true);
+                return false;
             }
-            if (reserve_events.length == 0) {
-                alert("You haven't made any reservations!");
-                location.reload(true);
-                return;
+            else if (reservations.length == 0) {
+                return false;
             }
                 
-            var reserve_event = reserve_events[0];
+            var reservation = reservations[0];
             
-            if (reserve_event.allDay) {
-                alert("You should specify the start time and end time!");
-                return;
-            }
             
-            var reserve_zone_id = (reserve_event.title).replace(/[^0-9]/ig,"");
-            var reserve_start_time = new Date(reserve_event.start.toISOString());
-            var reserve_end_time;
+            var zone_id = reservation.zone_id;
+            var zone_name = reservation.title;
+            var start_time = new Date(reservation.start.toISOString());
+            var end_time;
             
-            if (reserve_event.end == null) {
-                reserve_end_time = new Date(reserve_event.start.toISOString());
-                reserve_end_time.setHours(reserve_start_time.getHours() + 2);
+            alert(reservation.start);
+            alert(start_time);
+            if (reservation.allDay) {
+                start_time = new Date(start_time.getUTCFullYear(), start_time.getUTCMonth(), start_time.getUTCDate());
+                alert(start_time);
+               
+                if (reservation.end == null) {
+                    end_time = new Date(start_time);
+                    end_time.setDate(end_time.getDate() + 1);
+                } else {
+                    end_time = new Date(reservation.end.toISOString());
+                }
+            
             } else {
-                reserve_end_time = new Date(reserve_event.end.toISOString());
+                if (reservation.end == null) {
+                    end_time = new Date(start_time);
+                    end_time.setHours(end_time.getHours() + 2);
+                } else {
+                    end_time = new Date(reservation.end.toISOString());
+                }
             }
             
-            var reserve_user_id = 1;
+           // alert(end_time);
             
-            window.confirm( reserve_title + ' at ' + reserve_event.title + ' from ' + reserve_start_time.toLocaleString() + ' to ' + reserve_end_time.toLocaleString() + '?');
+            // return;
+            
+            var user_id = 1;
+            
+            window.confirm( title + ' at ' + reservation.title + ' from ' + start_time.toLocaleString() + ' to ' + end_time.toLocaleString() + '?');
             
             $.ajax({
                 url: '{% url "reservation_create" %}',
                 type: "POST",
                 data: JSON.stringify({ 
-                    title: reserve_title,  
-                    reservation_type: reserve_type, 
-                    description: reserve_desc, 
-                    zone_id: reserve_zone_id, 
-                    start_time: reserve_start_time, 
-                    end_time: reserve_end_time, 
-                    user_id: reserve_user_id
+                    title: title,  
+                    reservation_type: reservation_type, 
+                    description: description, 
+                    zone_id: zone_id, 
+                    zone_name: zone_name,
+                    start_time: start_time, 
+                    end_time: end_time, 
+                    user_id: user_id,
+                    is_long_term: reservation.allDay
                 }),
                 success: function(data) {
                     console.log(data);
@@ -514,9 +531,10 @@
                         alert("Oops! We have encountered an error " + data.error_msg + "!");
                     }
                 },
-           });
+            });
+        
+        });
 
-       });
     </script>
 
 </body>

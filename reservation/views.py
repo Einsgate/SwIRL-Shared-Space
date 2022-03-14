@@ -6,14 +6,18 @@ from django.views.decorators.csrf import csrf_exempt
 
 import json
 from django.utils.dateparse import parse_datetime
+from django.core import serializers
 
-from .models import Reservation
+from .models import *
 from .errors import *
 
 def index(request):
-    t = loader.get_template('index.html')
-    return HttpResponse(t.render())
-
+    zone_list = Zone.list_all()
+    
+    return render(request, "index.html", {
+       "zone_list": zone_list,
+    })
+   
 # POST https://console.aws.amazon.com/cloud9/ide/79b97093f17f4c9ab2bb12c9205ebaf7/create
 # {
 # user_id: ...    
@@ -22,9 +26,9 @@ def index(request):
 def reservation_create(request):
     if request.method == 'POST':
         params = json.loads(request.body)
-        
+        print(params)
         # Check required fields
-        if 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
+        if 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
             return JsonResponse({
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
@@ -32,7 +36,7 @@ def reservation_create(request):
             
         
         # Validate fields
-        reservation = Reservation(title = params['title'], reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
+        reservation = Reservation(zone_id = params['zone_id'], zone_name = params['zone_name'], is_long_term = params['is_long_term'], title = params['title'], reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
             end_time = parse_datetime(params['end_time']), user_id = params['user_id'])
         if not reservation.is_valid():
             return JsonResponse({
@@ -60,18 +64,34 @@ def reservation_list(request):
         
         # Check required fields
         if 'user_id' not in params:
-            return render(request, 'reservation_list.html', {
-                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
-                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            reservations = Reservation.list_all()
+        else:
+            reservations = Reservation.list_all(params['user_id'])
+                
+        ret = []
+
+        for r in reservations:
+            ret.append({
+                "id": r.id,
+                "title": r.title,
+                "description": r.description,
+                "zone_id": r.zone_id,
+                "zone_name": r.zone_name,
+                "user_id": r.user_id,
+                "team_id": r.team_id,
+                "is_long_term": r.is_long_term,
+                "start_time": r.start_time,
+                "end_time": r.end_time,
+                "reservation_type": r.reservation_type,
             })
-            
-        return render(request, 'reservation_list.html', {
+                
+        return JsonResponse({
             "error_code": 0,
-            "results": Reservation.list_all(params['user_id'])
+            "results": ret
         })
         
         
-def reservation_delete(resquest):
+def reservation_delete(request):
     if request.method == 'GET':
         params = request.GET
         
@@ -84,6 +104,26 @@ def reservation_delete(resquest):
             
         Reservation.delete(params['id'])
             
-        return render(request, 'index.html', {
+        return JsonResponse({
             "error_code": 0,
+        })
+        
+        
+def zone_list(request):
+    if request.method == 'GET':
+        zones = Zone.list_all()
+        results = []
+        
+        for zone in zones:
+            results.append({
+                "id": zone.id,
+                "name": zone.name,
+                "is_noisy": zone.is_noisy,
+                "description": zone.description,
+                "zone_type": zone.zone_type,
+            })
+        
+        return JsonResponse({
+            "error_code": 0,
+            "results": results,
         })
