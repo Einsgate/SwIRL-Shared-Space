@@ -4,7 +4,7 @@ from django.db.models import Q
 # Create your models here.
 
 class Reservation(models.Model):
-    id = models.IntegerField(primary_key = True, blank=True, null=True)
+    #id = models.IntegerField(primary_key = True, blank=True)
     title = models.CharField(max_length = 50, default = 'untitled')
     description = models.CharField(max_length = 255, default = '')
     zone_id = models.IntegerField(default = 0)
@@ -45,7 +45,7 @@ class Reservation(models.Model):
         
     
 class User(models.Model):
-    id = models.IntegerField(primary_key = True, blank=True, null=True)
+    #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50)
     role_id = models.IntegerField()
     email = models.CharField(max_length = 50)
@@ -54,11 +54,11 @@ class User(models.Model):
     
     
 class Role(models.Model):
-    id = models.IntegerField(primary_key = True, blank=True, null=True)
+    #id = models.IntegerField(primary_key = True, blank=True)
     role_name = models.CharField(max_length = 255)
     
 class Team(models.Model):
-    id = models.IntegerField(primary_key = True, blank=True, null=True)
+    #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50)
     leader_id = models.IntegerField()
     
@@ -68,7 +68,7 @@ class TeamMembers(models.Model):
     join_time = models.DateTimeField()
     
 class Training(models.Model):
-    id = models.IntegerField(primary_key = True, blank=True, null=True)
+    #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50)
     description = models.CharField(max_length = 1000)
     instructor_id = models.IntegerField()
@@ -83,7 +83,7 @@ class TrainingDetail(models.Model):
     registration_time = models.DateTimeField()
     
 class Zone(models.Model):
-    id = models.IntegerField(primary_key = True, blank=True, null=True)
+    #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50, default = "noname")
     is_noisy = models.BooleanField(default = False)
     description = models.CharField(max_length = 500, default = "")
