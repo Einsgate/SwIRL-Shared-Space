@@ -58,6 +58,14 @@ def reservation_create(request):
             "id": reservation.id
         })
         
+
+def reservation_history(request):
+    reservations = Reservation.list_all(0)
+    return render(request, "reservation_history.html", {
+       "reservations": reservations,
+    })
+        
+        
 def reservation_list(request):
     if request.method == 'GET':
         params = request.GET
@@ -90,24 +98,23 @@ def reservation_list(request):
             "results": ret
         })
         
-        
+@csrf_exempt
 def reservation_delete(request):
     if request.method == 'GET':
         params = request.GET
-        
+
         # Check required fields
         if 'id' not in params:
-            return render(request, 'index.html', {
+            return JsonResponse({
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
-            
+
         Reservation.delete(params['id'])
-            
+
         return JsonResponse({
             "error_code": 0,
         })
-        
         
 def zone_list(request):
     if request.method == 'GET':
