@@ -62,3 +62,12 @@ jobs:
           TEST_DB_PASS: postgres
           TEST_DB_PORT: 5432
           TEST_DB_USER: postgres
+          
+      - name: Generate Report
+        run: |
+          pipenv run coverage run --source='.' manage.py test
+          pipenv run coverage report
+      
+      - name: Update Coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
