@@ -23,7 +23,7 @@ def step_impl(context):
     # br = context.browser
     # br.get(context.base_url + "reservation/create/")
     # 	assert br.find_element_by_name('csrfmiddlewaretoken').is_enabled()
-    br.find_element_by_xpath("//*[@id='calendar']/div[1]/div[2]/div/button[1]").click() # click on month
+    br.find_element_by_xpath('//*[@id='calendar']/div[1]/div[2]/div/button[1]').click() # click on month
     br.find_element_by_xpath('//*[@id="calendar"]/div[1]/div[1]/div/button[2]').click() # next
     reset = br.find_element_by_xpath('//*[@id="reservation-reset-button"]')
     zone_select = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[1]/div[1]/div[2]/div/div[1]')
@@ -52,6 +52,7 @@ def step_impl(context):
     br.find_element_by_xpath('//*[@id="reservation-title"]').send_keys('test1') # title
     # br.find_element_by_xpath('//*[@id="reservation-type"]').click()
     # br.find_element_by_xpath('//*[@id="reservation-type"]/option[3]').click() # option open
+    
     submit = br.find_element_by_xpath('//*[@id="reservation-button"]') # submit
     actions.move_to_element(submit).click().perform()
     # print("L38: ", br.current_url) # http://localhost:35831/?a=option2
@@ -86,11 +87,11 @@ def step_impl(context):
     # br.find_element_by_xpath('//*[@id="page-wrapper"]/div[2]/div[2]/div[1]/div[2]/div[2]/form/div[1]/input').send_keys('test2')
     # br.find_element_by_xpath('//*[@id="page-wrapper"]/div[2]/div[2]/div[1]/div[2]/div[2]/form/div[3]/div[2]/label/div').click()
     # br.find_element_by_xpath('//*[@id="page-wrapper"]/div[2]/div[2]/div[1]/div[2]/div[2]/form/div[7]/button[1]').click()
-    br.find_element_by_xpath("//*[@id='calendar']/div[1]/div[2]/div/button[1]").click() # click on month
+    br.find_element_by_xpath('//*[@id='calendar']/div[1]/div[2]/div/button[1]').click() # click on month
     br.find_element_by_xpath('//*[@id="calendar"]/div[1]/div[1]/div/button[2]').click() # next
     reset = br.find_element_by_xpath('//*[@id="reservation-reset-button"]')
     zone_select = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[1]/div[1]/div[2]/div/div[1]')
-    date = br.find_element_by_xpath('//*[@id="calendar"]/div[2]/div/table/tbody/tr/td/div/div/div[2]/div[1]/table/tbody/tr/td[2]')
+    date = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[2]/div/div[2]/div/div[2]/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td[4]')
     actions = ActionChains(br)
     
     # fill in valid form and submit, title"test1, open option, zone 1, switch to month calander view
@@ -106,7 +107,7 @@ def step_impl(context):
     submit = br.find_element_by_xpath('//*[@id="reservation-button"]') # submit
     actions.move_to_element(submit).click().perform()
     
-    assert True
+    # assert True
 	
 	
 @then('I am received error message')
@@ -115,4 +116,128 @@ def step_impl(context):
     alert = Alert(br)
     assert alert.text == "Conflit with existing reservations"
     alert.accept()
-    assert True
+    # assert True
+    
+    
+    
+@given('Create zone one quiet reservation')
+def step_impl(context):
+    br = context.browser
+    br.get(context.base_url)
+    sleep(2)
+    br.find_element_by_xpath('//*[@id='calendar']/div[1]/div[2]/div/button[1]').click() # click on month
+    br.find_element_by_xpath('//*[@id="calendar"]/div[1]/div[1]/div/button[2]').click() # next
+    reset = br.find_element_by_xpath('//*[@id="reservation-reset-button"]')
+    zone_select = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[1]/div[1]/div[2]/div/div[1]')
+    date = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[2]/div/div[2]/div/div[2]/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td[2]')
+    actions = ActionChains(br)
+    
+    # fill in valid form and submit, title"test1, open option, zone 1, switch to month calander view
+    actions.move_to_element(zone_select).click_and_hold().pause(2).move_to_element(date).release().perform()
+    
+    br.find_element_by_xpath('//*[@id="reservation-title"]').send_keys('test1') # title
+    br.find_element_by_xpath('//*[@id="reservation-type"]').click()
+    br.find_element_by_xpath('//*[@id="reservation-type"]/option[2]').click() # option cloased
+    submit = br.find_element_by_xpath('//*[@id="reservation-button"]') # submit
+    actions.move_to_element(submit).click().perform()
+    alert = Alert(br)
+    alert.accept()
+    br.get(context.base_url + '/reservation/history')
+    assert br.current_url.endswith('/reservation/history')
+    t_body = br.find_element_by_xpath('//*[@id="reserveList"]')
+    rows = t_body.find_elements(By.TAG_NAME, "tr")
+    assert len(rows) >= 1
+
+@when('I submit zone two open reservation')
+def step_impl(context):
+    br = context.browser
+    # # br.get(br.current_url + '/reservation/create/')
+    br.get(context.base_url)
+    br.find_element_by_xpath('//*[@id='calendar']/div[1]/div[2]/div/button[1]').click() # click on month
+    br.find_element_by_xpath('//*[@id="calendar"]/div[1]/div[1]/div/button[2]').click() # next
+    reset = br.find_element_by_xpath('//*[@id="reservation-reset-button"]')
+    zone_select = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[1]/div[1]/div[2]/div/div[1]')
+    date = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[2]/div/div[2]/div/div[2]/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td[2]')
+    actions = ActionChains(br)
+    
+    # fill in valid form and submit, title"test1, open option, zone 1, switch to month calander view
+    # actions.click_and_hold(zone_select).pause(5).move_to_element(date).release().perform()
+    # actions.move_to_element(date).pause(2).perform()
+    actions.drag_and_drop(zone_select, date).perform()
+    # actions.drag_and_drop_by_offset(zone_select, 1000, 91).perform()
+    # assert br.find_element_by_xpath('//*[@id="calendar"]/div[2]/div/table/tbody/tr/td/div/div/div[1]/div[2]/table/tbody/tr/td[4]/a/div[1]').is_enabled()
+    # sleep(2)
+    br.find_element_by_xpath('//*[@id="reservation-title"]').send_keys('test2') # title
+    # br.find_element_by_xpath('//*[@id="reservation-type"]').click()
+    # br.find_element_by_xpath('//*[@id="reservation-type"]/option[3]').click() # option open
+    submit = br.find_element_by_xpath('//*[@id="reservation-button"]') # submit
+    actions.move_to_element(submit).click().perform()
+    
+@then('I am received error messsage')
+def step_impl(context):
+    br = context.browser
+    alert = Alert(br)
+    assert alert.text == "Conflit with existing reservations"
+    alert.accept()
+
+
+
+@given('Create zone one cloased reservation')
+def step_impl(context):
+    br = context.browser
+    br.get(context.base_url)
+    sleep(2)
+    br.find_element_by_xpath('//*[@id='calendar']/div[1]/div[2]/div/button[1]').click() # click on month
+    br.find_element_by_xpath('//*[@id="calendar"]/div[1]/div[1]/div/button[2]').click() # next
+    reset = br.find_element_by_xpath('//*[@id="reservation-reset-button"]')
+    zone_select = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[1]/div[1]/div[2]/div/div[1]')
+    date = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[2]/div/div[2]/div/div[2]/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td[1]')
+    actions = ActionChains(br)
+    
+    # fill in valid form and submit, title"test1, open option, zone 1, switch to month calander view
+    actions.move_to_element(zone_select).click_and_hold().pause(2).move_to_element(date).release().perform()
+    
+    br.find_element_by_xpath('//*[@id="reservation-title"]').send_keys('test1') # title
+    br.find_element_by_xpath('//*[@id="reservation-type"]').click()
+    br.find_element_by_xpath('//*[@id="reservation-type"]/option[2]').click() # option cloased
+    submit = br.find_element_by_xpath('//*[@id="reservation-button"]') # submit
+    actions.move_to_element(submit).click().perform()
+    alert = Alert(br)
+    alert.accept()
+    br.get(context.base_url + '/reservation/history')
+    assert br.current_url.endswith('/reservation/history')
+    t_body = br.find_element_by_xpath('//*[@id="reserveList"]')
+    rows = t_body.find_elements(By.TAG_NAME, "tr")
+    assert len(rows) >= 1
+
+@when('I submit a zone two open reservation')
+def step_impl(context):
+    br = context.browser
+    # # br.get(br.current_url + '/reservation/create/')
+    br.get(context.base_url)
+    br.find_element_by_xpath('//*[@id='calendar']/div[1]/div[2]/div/button[1]').click() # click on month
+    br.find_element_by_xpath('//*[@id="calendar"]/div[1]/div[1]/div/button[2]').click() # next
+    reset = br.find_element_by_xpath('//*[@id="reservation-reset-button"]')
+    zone_select = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[1]/div[1]/div[2]/div/div[1]')
+    date = br.find_element_by_xpath('/html/body/div[2]/div/div[3]/div[2]/div[2]/div/div[2]/div/div[2]/div/table/tbody/tr/td/div/div/div[1]/div[1]/table/tbody/tr/td[2]')
+    actions = ActionChains(br)
+    
+    # fill in valid form and submit, title"test1, open option, zone 1, switch to month calander view
+    # actions.click_and_hold(zone_select).pause(5).move_to_element(date).release().perform()
+    # actions.move_to_element(date).pause(2).perform()
+    actions.drag_and_drop(zone_select, date).perform()
+    # actions.drag_and_drop_by_offset(zone_select, 1000, 91).perform()
+    # assert br.find_element_by_xpath('//*[@id="calendar"]/div[2]/div/table/tbody/tr/td/div/div/div[1]/div[2]/table/tbody/tr/td[4]/a/div[1]').is_enabled()
+    # sleep(2)
+    br.find_element_by_xpath('//*[@id="reservation-title"]').send_keys('test2') # title
+    # br.find_element_by_xpath('//*[@id="reservation-type"]').click()
+    # br.find_element_by_xpath('//*[@id="reservation-type"]/option[3]').click() # option open
+    submit = br.find_element_by_xpath('//*[@id="reservation-button"]') # submit
+    actions.move_to_element(submit).click().perform()
+    
+@then('I am received error message')
+def step_impl(context):
+    br = context.browser
+    alert = Alert(br)
+    assert alert.text == "Conflit with existing reservations"
+    alert.accept()
