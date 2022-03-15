@@ -24,39 +24,47 @@ def index(request):
 #}
 @csrf_exempt 
 def reservation_create(request):
-    if request.method == 'POST':
-        params = json.loads(request.body)
-        print(params)
-        # Check required fields
-        if 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
-            return JsonResponse({
-                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
-                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
-            })
+    try:
+        if request.method == 'POST':
+            #print(str(request.body))
+            params = json.loads(request.body)
+            #print(params)
+            # Check required fields
+            if 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+                })
+                
             
-        
-        # Validate fields
-        reservation = Reservation(zone_id = params['zone_id'], zone_name = params['zone_name'], is_long_term = params['is_long_term'], title = params['title'], reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
-            end_time = parse_datetime(params['end_time']), user_id = params['user_id'])
-        if not reservation.is_valid():
+            # Validate fields
+            reservation = Reservation(zone_id = params['zone_id'], zone_name = params['zone_name'], is_long_term = params['is_long_term'], title = params['title'], reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
+                end_time = parse_datetime(params['end_time']), user_id = params['user_id'])
+            if not reservation.is_valid():
+                return JsonResponse({
+                    "error_code": ERR_VALUE_ERROR_CODE,
+                    "error_msg": ERR_VALUE_ERROR_MSG
+                })
+                
+            # Check conflicts
+            if reservation.has_confliction():
+                return JsonResponse({
+                    "error_code": ERR_RESERVATION_CONFLICT_CODE,
+                    "error_msg": ERR_RESERVATION_CONFLICT_MSG
+                })
+                
+            # Create reservation
+            reservation.save()
             return JsonResponse({
-                "error_code": ERR_VALUE_ERROR_CODE,
-                "error_msg": ERR_VALUE_ERROR_MSG
+                "error_code": 0,
+                "id": reservation.id
             })
-            
-        # Check conflicts
-        if reservation.has_confliction():
-            return JsonResponse({
-                "error_code": ERR_RESERVATION_CONFLICT_CODE,
-                "error_msg": ERR_RESERVATION_CONFLICT_MSG
-            })
-            
-        # Create reservation
-        reservation.save()
+    except Exception as e:
         return JsonResponse({
-            "error_code": 0,
-            "id": reservation.id
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_message": str(e),
         })
+        
         
 
 def reservation_history(request):
