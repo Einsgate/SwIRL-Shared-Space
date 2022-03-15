@@ -5,6 +5,10 @@ name = "pypi"
 
 [packages]
 django = "==3.2.12"
+django_heroku = "*"
+coverage = "*"
+pytz = "*"
+python-dateutil = "*"
 
 [dev-packages]
 
