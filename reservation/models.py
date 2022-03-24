@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 
@@ -42,17 +43,19 @@ class Reservation(models.Model):
     @staticmethod
     def delete(id = 0):
         Reservation.objects.filter(id = id).delete()
-        
-    
-class User(models.Model):
+
+class User(AbstractUser):
     #id = models.IntegerField(primary_key = True, blank=True)
-    name = models.CharField(max_length = 50)
     role_id = models.IntegerField()
-    email = models.CharField(max_length = 50)
-    password = models.CharField(max_length = 255)
     google_token = models.CharField(max_length = 1000)
-    
-    
+    last_login = models.DateTimeField(auto_now=True, blank=True, null=True, verbose_name='last_login_time')
+
+    @staticmethod
+    def findUserByName(username=0, password=0):
+        user_list = User.objects.filter(username = username, password = password)
+        if len(user_list) == 1:
+            return user_list.first()
+
 class Role(models.Model):
     #id = models.IntegerField(primary_key = True, blank=True)
     role_name = models.CharField(max_length = 255)

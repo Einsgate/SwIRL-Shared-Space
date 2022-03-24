@@ -19,80 +19,8 @@
 
 <body>
     <div id="wrapper">
-        <nav class="navbar-default navbar-static-side" role="navigation">
-            <div class="sidebar-collapse">
-                <ul class="nav metismenu" id="side-menu">
-                    <li class="nav-header">
-                        <div class="dropdown profile-element">
-                        	<span><img alt="image" class="img-circle" src="/static/img/profile_small.jpg" /></span>
-                            <a data-toggle="dropdown" class="dropdown-toggle" href="#">
-                                <span class="clear"> <span class="block m-t-xs"> <strong class="font-bold">Einsgate Wong</strong>
-                                 </span> <span class="text-muted text-xs block">Project Manager<b class="caret"></b></span> </span> </a>
-                            <ul class="dropdown-menu animated fadeInRight m-t-xs">
-                                <li><a >Profile</a></li>
-                                <li><a >Contacts</a></li>
-                                <li><a >Mailbox</a></li>
-                                <li class="divider"></li>
-                                <li><a >Logout</a></li>
-                            </ul>
-                        </div>
-                        <div class="logo-element">
-                            SwIRL
-                        </div>
-                    </li>
-                    <li class="active">
-                        <a href={% url "index" %}><i class="fa fa-th-large"></i> <span class="nav-label">Home</span></a>
-                    </li>
-                    <li>
-                        <a ><i class="fa fa-diamond"></i> <span class="nav-label">Users</span><span class="fa arrow"></span></a>
-                        <ul class="nav nav-second-level">
-                            <li class="active"><a >Role Management</a></li>
-                            <li><a >Staff Management</a></li>
-                            <li><a >Leader Management</a></li>
-                            <li><a >Member Management</a></li>
-                        </ul>                    
-                    </li>
-                    <li>
-                        <a href="#"><i class="fa fa-bar-chart-o"></i> <span class="nav-label">Statistics</span><span class="fa arrow"></span></a>
-                        <ul class="nav nav-second-level collapse">
-                            <li><a >Overall</a></li>
-                            <li><a >Space Reserve Statistics</a></li>
-                            <li><a >Training Statistics</a></li>
-                            <li><a >Register Statistics</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a href="#"><i class="fa fa-pie-chart"></i> <span class="nav-label">Reservations</span> <span class="fa arrow"></span></a>
-                        <ul class="nav nav-second-level collapse">
-                            <li><a href='{% url "reservation_index" %}'>Make Reservations</a></li>
-                            <li><a href='{% url "reservation_history" %}'>Reservation History</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a href="#"><i class="fa fa-flask"></i> <span class="nav-label">Teams</span> <span class="fa arrow"></span> </a>
-                        <ul class="nav nav-second-level collapse">
-                            <li><a >Team List</a></li>
-                            <li><a >Apply Team</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a href="#"><i class="fa fa-edit"></i> <span class="nav-label">Training</span><span class="fa arrow"></span></a>
-                        <ul class="nav nav-second-level collapse">
-                            <li><a >Training List</a></li>
-                            <li><a >Apply Training</a></li>
-                        </ul>
-                    </li>
-                    <!--<li>-->
-                    <!--    <a href="#"><i class="fa fa-desktop"></i> <span class="nav-label">Task Management</span></a>-->
-                    <!--    <ul class="nav nav-second-level collapse">-->
-                    <!--        <li><a href="projects.html">Task List</a></li>-->
-                    <!--        <li><a href="profile.html">Create Task</a></li>-->
-                    <!--        <li><a href="timeline.html">Tracking Task</a></li>-->
-                    <!--    </ul>-->
-                    <!--</li>-->
-                </ul>
-            </div>
-        </nav>
+
+		{% include 'common/nav.html' %}
 
         <div id="page-wrapper" class="gray-bg">
             
@@ -100,18 +28,13 @@
         <nav class="navbar navbar-static-top" role="navigation" style="margin-bottom: 0">
             <div class="navbar-header">
                 <a class="navbar-minimalize minimalize-styl-2 btn btn-primary " href="#"><i class="fa fa-bars"></i> </a>
-                <form role="search" class="navbar-form-custom" action="search_results.html">
-                    <div class="form-group">
-                        <input type="text" placeholder="Search for something..." class="form-control" name="top-search" id="top-search">
-                    </div>
-                </form>
             </div>
             <ul class="nav navbar-top-links navbar-right">
                 <li>
                     <span class="m-r-sm text-muted welcome-message">Welcome to Southwest Innovation Research Lab Shared Space.</span>
                 </li>
                 <li>
-                    <a >
+                    <a href="accounts/logout">
                         <i class="fa fa-sign-out"></i> Log out
                     </a>
                 </li>
@@ -162,8 +85,6 @@
                                     <a class="collapse-link">
                                         <i class="fa fa-chevron-up"></i>
                                     </a>
-                                    
-                                    
                                     <a class="close-link">
                                         <i class="fa fa-times"></i>
                                     </a>
@@ -172,7 +93,6 @@
                             <div class="ibox-content">
                                 <div id="external-events">
                                     <p>Drag an event and enter the calendar.</p>
-                                    
                                     {% for zone in zone_list %}
                                         <!--<div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; z-index: auto; left: 0px; top: 0px; background-color: #f8ac59;" data-color='#f8ac59'>Zone 1</div>-->
                                         <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #00BFFF;" data-color='#00BFFF' id='{{ zone.id }}'>{{ zone.name }}</div>
@@ -246,12 +166,7 @@
                 </div>
             </div>
             <div class="footer">
-                <div class="pull-right">
-                    10GB of <strong>250GB</strong> Free.
-                </div>
-                <div>
-                    <strong>Copyright</strong> Southwest Innovation Research Lab &copy; 2014-2017
-                </div>
+				{% include 'common/footer.html' %}
             </div>
         </div>
 
@@ -473,9 +388,6 @@
 
             $('#calendar').fullCalendar('option', 'timezone', 'local');
 
-            
-
-
         });
     </script>
     <script type="text/javascript">
@@ -514,13 +426,12 @@
             }
                 
             var reservation = reservations[0];
-            
-            
+
             var zone_id = reservation.zone_id;
             var zone_name = reservation.title;
             var start_time = new Date(reservation.start.toISOString());
             var end_time;
-            
+
             //alert(reservation.start);
            // alert(start_time);
             if (reservation.allDay) {
