@@ -139,7 +139,7 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = 'login'
+LOGIN_URL = 'accounts/login'
 AUTH_USER_MODEL='reservation.User'
 
 # Activate Django-Heroku.
