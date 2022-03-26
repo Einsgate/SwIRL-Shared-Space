@@ -17,6 +17,9 @@ def init(apps, schema_editor):
     Zone.objects.create(id = 9, name = "Work Table 6", is_noisy = False, description = "", zone_type = 1)
     Zone.objects.create(id = 10, name = "Work Table 7", is_noisy = False, description = "", zone_type = 1)
     Zone.objects.create(id = 11, name = "Work Table 8", is_noisy = False, description = "", zone_type = 1)
+    
+   # Site = apps.get_model('django.contrib.sites', 'Site')
+   # Site.objects.create(id = 5, domain = "sharedspace.com", name = "sharedspace.com")
 
 
 class Migration(migrations.Migration):

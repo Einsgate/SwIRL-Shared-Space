@@ -46,15 +46,15 @@ class Reservation(models.Model):
 
 class User(AbstractUser):
     #id = models.IntegerField(primary_key = True, blank=True)
-    role_id = models.IntegerField()
-    google_token = models.CharField(max_length = 1000)
-    last_login = models.DateTimeField(auto_now=True, blank=True, null=True, verbose_name='last_login_time')
+    role_id = models.IntegerField(default = 3)
+    #google_token = models.CharField(max_length = 1000)
+    #last_login = models.DateTimeField(auto_now=True, blank=True, null=True, verbose_name='last_login_time')
 
-    @staticmethod
-    def findUserByName(username=0, password=0):
-        user_list = User.objects.filter(username = username, password = password)
-        if len(user_list) == 1:
-            return user_list.first()
+    # @staticmethod
+    # def findUserByName(username=0, password=0):
+    #     user_list = User.objects.filter(username = username, password = password)
+    #     if len(user_list) == 1:
+    #         return user_list.first()
 
 class Role(models.Model):
     #id = models.IntegerField(primary_key = True, blank=True)

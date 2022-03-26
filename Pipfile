@@ -9,6 +9,7 @@ django_heroku = "*"
 coverage = "*"
 pytz = "*"
 python-dateutil = "*"
+django-allauth = "*"
 
 [dev-packages]
 

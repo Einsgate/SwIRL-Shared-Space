@@ -11,34 +11,39 @@ from django.core import serializers
 from .models import *
 from .errors import *
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login,authenticate,logout
+# from django.contrib.auth import login,authenticate,logout
+
+# @csrf_exempt
+# def accounts_login(request):
+#     if request.method=='GET':
+#         return  render(request,'login.html')
+#     else:
+#         username=request.POST.get('username')
+#         password=request.POST.get('password')
+
+#         #user= authenticate(username=username,password=password)
+#         user = User.findUserByName(username=username, password=password)
+#         print(user)
+#         if user:
+#             login(request,user)
+#             zone_list = Zone.list_all()
+#             return render(request, "index.html", {
+#                 "zone_list": zone_list,
+#             })
+#         else:
+#             err_msg="loging error"
+#             return render(request, 'login.html',{'err_msg':err_msg})
+
+# def accounts_logout(request):
+#     #print(request.user.username)
+#     logout(request)
+#     err_msg="Logout Successful"
+#     return render(request, 'login.html',{'err_msg':err_msg})
 
 @csrf_exempt
 def accounts_login(request):
-    if request.method=='GET':
-        return  render(request,'login.html')
-    else:
-        username=request.POST.get('username')
-        password=request.POST.get('password')
-
-        #user= authenticate(username=username,password=password)
-        user = User.findUserByName(username=username, password=password)
-        print(user)
-        if user:
-            login(request,user)
-            zone_list = Zone.list_all()
-            return render(request, "index.html", {
-                "zone_list": zone_list,
-            })
-        else:
-            err_msg="loging error"
-            return render(request, 'login.html',{'err_msg':err_msg})
-
-def accounts_logout(request):
-    #print(request.user.username)
-    logout(request)
-    err_msg="Logout Successful"
-    return render(request, 'login.html',{'err_msg':err_msg})
+    if request.method == 'GET':
+        return render(request, 'socialaccount/login.html')
 
 @login_required
 def index(request):
