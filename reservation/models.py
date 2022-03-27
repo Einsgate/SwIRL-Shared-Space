@@ -65,6 +65,15 @@ class Team(models.Model):
     name = models.CharField(max_length = 50)
     leader_id = models.IntegerField()
     
+    # Return teams whose leader is user_id
+    @staticmethod
+    def list_all(user_id):
+        return Team.objects.filter(leader_id = user_id)
+        
+    @staticmethod
+    def delete(id = 0):
+        Team.objects.filter(id = id).delete()
+    
 class TeamMembers(models.Model):
     team_id = models.IntegerField()
     user_id = models.IntegerField()

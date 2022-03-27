@@ -16,4 +16,8 @@ urlpatterns = [
     path('reservation/create', views.reservation_create, name='reservation_create'),
     path('reservation/delete', views.reservation_delete, name='reservation_delete'),
     path('zone/list', views.zone_list, name='zone_list'),
+    
+    # team
+    path('team/list', views.team_list, name='team_list'), 
+    path('team/delete', views.team_delete, name='team_delete'),
 ]

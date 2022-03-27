@@ -176,3 +176,27 @@ def zone_list(request):
             "error_code": 0,
             "results": results,
         })
+        
+        
+# Show team list
+def team_list(request):
+    teams = Team.list_all(0)
+    return render(request, "team_list.html", {})
+    
+@csrf_exempt
+def team_delete(request):
+    if request.method == 'GET':
+        params = request.GET
+
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            })
+
+        Team.delete(params['id'])
+
+        return JsonResponse({
+            "error_code": 0,
+        })
