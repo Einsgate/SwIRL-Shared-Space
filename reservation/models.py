@@ -71,6 +71,10 @@ class Team(models.Model):
         return Team.objects.filter(leader_id = user_id)
         
     @staticmethod
+    def query(team_id):
+        return Team.objects.filter(id = team_id)
+        
+    @staticmethod
     def delete(id = 0):
         Team.objects.filter(id = id).delete()
     

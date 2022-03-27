@@ -185,25 +185,38 @@ def team_list(request):
         "teams": teams
     })
     
-def team_details(request):
-    current_team_id = request.GET.get('team_id')
+def team_details(request, tid):
+    team = Team.query(tid)
     return render(request, "team_details.html", {
+        "team": team[0]
     })
+    
+    
+def team_details_update(request, tid):
+    try:
+        if request.method == 'POST':
+            # [TODO] fill out the steps to update team details.
+            return JsonResponse({"error_code": 0,});
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+        })
     
 @csrf_exempt
 def team_delete(request):
     if request.method == 'GET':
         params = request.GET
-
+        
         # Check required fields
         if 'id' not in params:
             return JsonResponse({
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
-
+    
         Team.delete(params['id'])
-
+        
         return JsonResponse({
             "error_code": 0,
         })

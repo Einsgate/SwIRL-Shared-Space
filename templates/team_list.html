@@ -78,7 +78,7 @@
                                 <tbody id="team_list">
                                 	{% for team in teams %}  
 	                                <tr id="team_id_{{team.id}}">
-	                                    <td>{{team.name}}</td>
+	                                    <td><a href="list/{{team.id}}/">{{team.name}}</a></td>
 	                                    <td>{{team.leader_id}}</td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
