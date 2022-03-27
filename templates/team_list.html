@@ -58,41 +58,16 @@
                 </ol>
             </div>
             <div class="col-lg-2">
-                <button class="btn btn-primary" type="submit" id="team-button">Add</button>
             </div>
         </div>
 
         <div class="wrapper wrapper-content animated fadeInRight ecommerce">
-<!-- 
-            <div class="ibox-content m-b-sm border-bottom">
-                <div class="row">
-                    <div class="col-sm-4">
-                        <div class="form-group">
-                            <label class="control-label" for="order_id">Team Name</label>
-                            <input type="text" id="order_id" name="order_id" value="" placeholder="Order ID" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-sm-4">
-                        <div class="form-group">
-                            <label class="control-label" for="status">Reserve status</label>
-                            <input type="text" id="status" name="status" value="" placeholder="Status" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-sm-4">
-                        <div class="form-group">
-                            <label class="control-label" for="customer">Zone Name</label>
-                            <input type="text" id="customer" name="customer" value="" placeholder="Customer" class="form-control">
-                        </div>
-                    </div>
-                </div>
-            </div>
--->
             <div class="row">
                 <div class="col-lg-12">
                     <div class="ibox">
                         <div class="ibox-content">
 
-                            <table class="table table-stripped toggle-arrow-tiny" data-page-size="15">
+                            <table class="footable table table-stripped toggle-arrow-tiny" data-page-size="15">
                                 <thead>
 	                                <tr>
 	                                    <th data-hide="phone">Team Name</th>
@@ -100,9 +75,9 @@
 	                                    <th class="text-right">Action</th>
 	                                </tr>
                                 </thead>
-                                <tbody id="reserveList">
+                                <tbody id="team_list">
                                 	{% for team in teams %}  
-	                                <tr id="itemId_{{team.id}}">
+	                                <tr id="team_id_{{team.id}}">
 	                                    <td>{{team.name}}</td>
 	                                    <td>{{team.leader_id}}</td>
 	                                    <td class="text-right">
@@ -126,6 +101,48 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Only a user with high authority can add a team. -->
+            <!-- TODO: to make sure which authority level is here -->
+            <!--{% if request.user.role_id == 3 %}-->
+            <div class="row">
+                <div class="col-lg-12">
+                    <button class="btn btn-primary  pull-right" type="button" id="team-add-button", style="align: right">Add</button> 
+                    
+                    <!-- The popup dialog to create a team. -->
+                    <!-- Modal -->
+                    <div class="modal fade" id="teamModal" role="dialog">
+                        <div class="modal-dialog">
+                        
+                          <!-- Modal content-->
+                          <div class="modal-content">
+                            <div class="modal-header" style="padding:35px 50px;">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4>Create a team</h4>
+                            </div>
+                            <div class="modal-body" style="padding:40px 50px;">
+                                <form role="form">
+                                    <div class="form-group">
+                                        <label>Leader</label>
+                                        <input type="text" disabled="" placeholder="{{request.user.username}}" class="form-control"  id="team-leader">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Team name</label>
+                                        <input type="text" class="form-control" id="team-name">
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-primary pull-left" type="submit" id="team-submit-button" value={{request.user.id}}>Submit</button>
+                                <button class="btn btn-white pull-right" type="reset" id="team-reset-button">Reset</button>
+                            </div>
+                          </div>
+                          
+                        </div>
+                      </div> 
+                </div>
+            </div>
+            <!--{% endif %} -->
 
         </div>
         <div class="footer">
@@ -173,7 +190,7 @@
 		            data:{id: id},
                     type: "GET",
 		            success:function(msg){
-		            	$("#itemId_"+id).remove();
+		            	$("#team_id_"+id).remove();
 		            	
 		            },
 		            error:function(xhr,textstatus,thrown){
@@ -194,20 +211,24 @@
     </script>
     
     <script>
-        $("#team-button").on("submit", function(){
+        $("#team-add-button").click(function() {
+            $("#teamModal").modal();
+        });
+        
+        $("#team-submit-button").click(function() {
+            var team_name = document.getElementById("team-name").value;
+            var team_leader_id = $(this).attr('value');
+            
+            if(!confirm('Create a new team with the name ' + team_name + '?')){
+		        return false;
+			}
+            
             $.ajax({
                 url: '{% url "team_create" %}',
                 type: "POST",
                 data: JSON.stringify({ 
-                    title: title,  
-                    reservation_type: reservation_type, 
-                    description: description, 
-                    zone_id: zone_id, 
-                    zone_name: zone_name,
-                    start_time: start_time, 
-                    end_time: end_time, 
-                    user_id: user_id,
-                    is_long_term: reservation.allDay
+                    name: team_name,  
+                    leader_id: team_leader_id, 
                 }),
                 success: function(data) {
                     console.log(data);
@@ -218,10 +239,21 @@
                         alert("Oops! We have encountered an error " + data.error_msg + "!");
                         ret = false;
                     }
+                    
+                    var team_name_ele = document.getElementById("team-name");
+                    team_name_ele.value = '';
+                    $('#teamModal').modal('hide');
+                    window.location.reload();
                 },
             });
-        
             return ret;
+        });
+        
+        $("#team-reset-button").click(function() {
+            var team_name_ele = document.getElementById("team-name");
+            var team_leader_id_ele = document.getElementById("team-leader");
+            team_name_ele.value = '';
+            team_leader_id_ele.value = '';
         });
     </script>
 

@@ -178,10 +178,17 @@ def zone_list(request):
         })
         
         
-# Show team list
+# team list
 def team_list(request):
-    teams = Team.list_all(0)
-    return render(request, "team_list.html", {})
+    teams = Team.list_all(request.user.id)
+    return render(request, "team_list.html", {
+        "teams": teams
+    })
+    
+def team_details(request):
+    current_team_id = request.GET.get('team_id')
+    return render(request, "team_details.html", {
+    })
     
 @csrf_exempt
 def team_delete(request):
@@ -199,4 +206,35 @@ def team_delete(request):
 
         return JsonResponse({
             "error_code": 0,
+        })
+        
+@csrf_exempt 
+def team_create(request):
+    try:
+        if request.method == 'POST':
+            params = json.loads(request.body)
+
+            # Check required fields
+            if 'name' not in params or 'leader_id' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+                })
+            
+            # Validate fields
+            team = Team(name = params['name'], leader_id = params['leader_id'])
+                
+            # Create reservation
+            team.save()
+            return JsonResponse({
+                "error_code": 0, 
+                "team_id": team.id, 
+                "team_name": team.name, 
+                "team_leader_id": team.leader_id, 
+            })
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+            # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
         })
