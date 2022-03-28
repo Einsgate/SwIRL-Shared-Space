@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse,HttpResponseRedirect
 from django.template import loader
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -10,12 +10,14 @@ from django.core import serializers
 
 from .models import *
 from .errors import *
+from .const import *
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def index(request):
     zone_list = Zone.list_all()
-    
     return render(request, "index.html", {
-       "zone_list": zone_list,
+        "zone_list": zone_list,
     })
    
 # POST https://console.aws.amazon.com/cloud9/ide/79b97093f17f4c9ab2bb12c9205ebaf7/create
@@ -141,4 +143,83 @@ def zone_list(request):
         return JsonResponse({
             "error_code": 0,
             "results": results,
+        })
+        
+        
+# team view
+def team_view(request):
+    if request.method == 'GET':
+        if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
+            teams = Team.list_all()
+            team_list_title = 'Team List'
+        else:
+            teams = Team.list_all(request.user.id)
+            team_list_title = 'My Teams'
+        return render(request, "team_list.html", {
+            "teams": teams,
+            "team_list_title": team_list_title,
+        })
+    
+def team_detail(request, team_id):
+    members = TeamMember.get_team_members(team_id)
+    return render(request, "team_detail.html", {
+        "members": members
+    })
+    
+    
+def team_details_update(request, tid):
+    try:
+        if request.method == 'POST':
+            # [TODO] fill out the steps to update team details.
+            return JsonResponse({"error_code": 0,});
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+        })
+    
+@csrf_exempt
+def team_delete(request):
+    if request.method == 'GET':
+        params = request.GET
+        
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            })
+    
+        Team.delete(params['id'])
+        
+        return JsonResponse({
+            "error_code": 0,
+        })
+        
+@csrf_exempt 
+def team_create(request):
+    try:
+        if request.method == 'POST':
+            params = json.loads(request.body)
+
+            # Check required fields
+            if 'name' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+                })
+                
+            # Create team
+            team = Team(name = params['name'])
+            team.save()
+            return JsonResponse({
+                "error_code": 0, 
+                "team_id": team.id, 
+                "team_name": team.name
+            })
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+            # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
         })

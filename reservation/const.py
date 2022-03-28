@@ -1,0 +1,6 @@
+
+## Role id 
+ROLE_ADMIN  = 0
+ROLE_STAFF  = 1
+ROLE_LEAD   = 2
+ROLE_MEMBER = 3
