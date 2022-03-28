@@ -10,6 +10,7 @@ from django.core import serializers
 
 from .models import *
 from .errors import *
+from .const import *
 from django.contrib.auth.decorators import login_required
 # from django.contrib.auth import login,authenticate,logout
 
@@ -40,10 +41,10 @@ from django.contrib.auth.decorators import login_required
 #     err_msg="Logout Successful"
 #     return render(request, 'login.html',{'err_msg':err_msg})
 
-@csrf_exempt
-def accounts_login(request):
-    if request.method == 'GET':
-        return render(request, 'socialaccount/login.html')
+# @csrf_exempt
+# def accounts_login(request):
+#     if request.method == 'GET':
+#         return render(request, 'socialaccount/login.html')
 
 @login_required
 def index(request):
@@ -178,17 +179,30 @@ def zone_list(request):
         })
         
         
-# team list
-def team_list(request):
-    teams = Team.list_all(request.user.id)
-    return render(request, "team_list.html", {
-        "teams": teams
-    })
+def print_user_info(request):
+    print(request.user.username)
+    print(request.user.email)
+    print(request.user.role_id)
+        
+# team view
+def team_view(request):
+    if request.method == 'GET':
+        print_user_info(request)
+        if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
+            teams = Team.list_all()
+            team_list_title = 'Team List'
+        else:
+            teams = Team.list_all(request.user.id)
+            team_list_title = 'My Teams'
+        return render(request, "team_list.html", {
+            "teams": teams,
+            "team_list_title": team_list_title,
+        })
     
-def team_details(request, tid):
-    team = Team.query(tid)
-    return render(request, "team_details.html", {
-        "team": team[0]
+def team_detail(request, team_id):
+    members = TeamMember.get_team_members(team_id)
+    return render(request, "team_detail.html", {
+        "members": members
     })
     
     
@@ -228,22 +242,19 @@ def team_create(request):
             params = json.loads(request.body)
 
             # Check required fields
-            if 'name' not in params or 'leader_id' not in params:
+            if 'name' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
                 })
-            
-            # Validate fields
-            team = Team(name = params['name'], leader_id = params['leader_id'])
                 
-            # Create reservation
+            # Create team
+            team = Team(name = params['name'])
             team.save()
             return JsonResponse({
                 "error_code": 0, 
                 "team_id": team.id, 
-                "team_name": team.name, 
-                "team_leader_id": team.leader_id, 
+                "team_name": team.name
             })
     except Exception as e:
         return JsonResponse({
