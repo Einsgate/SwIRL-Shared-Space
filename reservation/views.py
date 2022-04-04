@@ -221,25 +221,6 @@ def team_view_update(request):
             "error_msg": str(e),
         })
     
-    
-def team_detail(request, team_id):
-    members = TeamMember.get_team_members(team_id)
-    return render(request, "manage-team/team_detail.html", {
-        "members": members
-    })
-    
-@csrf_exempt    
-def team_detail_update(request, tid):
-    try:
-        if request.method == 'POST':
-            # [TODO] fill out the steps to update team details.
-            return JsonResponse({"error_code": 0,});
-    except Exception as e:
-        return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_msg": str(e),
-        })
-    
 @csrf_exempt
 def team_delete(request):
     if request.method == 'GET':
@@ -303,3 +284,48 @@ def team_create(request):
             "error_msg": str(e),
             # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
         })
+        
+def team_detail(request, team_id):
+    members = TeamMember.get_team_members(team_id)
+    not_members = User.list_not_members(team_id)
+    team = Team.query(team_id)
+    if team.leader_id == None:
+        team_leader_id = -1
+    else:
+        team_leader_id = team.leader_id.id
+    return render(request, "manage-team/team_detail.html", {
+        "team_leader_id": team_leader_id, 
+        "not_members": not_members, 
+        "members": members
+    })
+    
+@csrf_exempt    
+def team_detail_update(request, team_id):
+    try:
+        if request.method == 'POST':
+            # [TODO] fill out the steps to update team details.
+            return JsonResponse({"error_code": 0,});
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+        })
+        
+@csrf_exempt  
+def team_detail_delete(request, team_id): 
+    if request.method == 'GET':
+        params = request.GET
+        
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            })
+    
+        TeamMember.delete(params['id'])
+        
+        return JsonResponse({
+            "error_code": 0,
+        })
+    

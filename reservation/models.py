@@ -64,6 +64,11 @@ class User(AbstractUser):
     def list_all():
         return User.objects.all()
         
+    @staticmethod
+    def list_not_members(team_id):
+        return User.objects.exclude(pk__in=TeamMember.get_team_members(team_id).values_list('user_id', flat=True))
+        
+    @staticmethod
     def query(user_id):
         return User.objects.get(pk = user_id)
     

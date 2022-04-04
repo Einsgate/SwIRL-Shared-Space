@@ -98,10 +98,10 @@
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
 	                                            {% if request.user.role_id.id == 0 or  request.user.role_id.id == 1 %}
-	                                            <button class="btn-white btn btn-xs" type="button" onclick="editItem({{team.id}})">Edit</button>
+	                                            <button class="btn-white btn btn-xs" type="button" onclick="edit_team({{team.id}})">Edit</button>
 	                                            {% include 'manage-team/edit_team_modal.html' %}
 	                                            
-	                                            <button class="btn-white btn btn-xs" type="button" onclick="deleteItem({{team.id}})">Delete</button>
+	                                            <button class="btn-white btn btn-xs" type="button" onclick="delete_team({{team.id}})">Delete</button>
 	                                            {% endif %}
 	                                        </div>
 	                                    </td>
@@ -171,7 +171,7 @@
     </script>
     
     <script>
-        function deleteItem(id) {
+        function delete_team(id) {
 			if(confirm("Are you sure to Delete?")){
 		        $.ajax({
 		            url:'{% url "team_delete" %}',
@@ -194,7 +194,7 @@
             $("#create-team-modal").modal();
         });
         
-	    function editItem(team_id) {
+	    function edit_team(team_id) {
 	        $.ajax({
                 url: '{% url "team_view_update" %}',
                 type: "GET",
