@@ -195,6 +195,23 @@
     
     <script>
 		function delete_member(id) {
+		    consolo.log("{%url 'reservations:team_detail_delete' team_id = {{team_id}}}");
+		    if(confirm("Are you sure to Delete?")){
+		        $.ajax({
+		            url:"{%url 'reservations:team_detail_delete' team_id = {{team_id}}}",
+		            data:{id: id},
+                    type: "GET",
+		            success:function(msg){
+		            	$("#member_id_"+id).remove();
+		            	
+		            },
+		                error:function(xhr,textstatus,thrown){
+		            }
+		        });
+		        return true;
+			}else{
+				alert("Cancel Delete Operation");
+			}
 		}
 	</script>
     
@@ -204,7 +221,28 @@
         });
         
         $("#member-submit-button").click(function() {
+            var selected_members = $("#add-select-member").chosen().val()
+            console.log(selected_members);
             
+            $.ajax({
+                url: '{% url "team_detail_update" %}',
+                type: "POST",
+                data: JSON.stringify({ 
+                    selected_members: selected_members,
+                }),
+                success: function(data) {
+                    if (data.error_code == 0) {
+                        alert("SUCCESS");
+                        ret = true;
+                    } else {
+                        alert("Oops! We have encountered an error " + data.error_msg + "!");
+                        ret = false;
+                    }
+                    
+                    $('#teamModal').modal('hide');
+                },
+            });
+            return ret;
         });
         
     </script>
