@@ -250,7 +250,6 @@
                     leader_id: team_leader_id, 
                 }),
                 success: function(data) {
-                    console.log(data);
                     if (data.error_code == 0) {
                         alert("SUCCESS");
                         ret = true;
@@ -269,13 +268,11 @@
 
     $("#edit-team-save-button").click(function() {
             var team_id = $(this).val();
-            console.log('team_id = ' + team_id);
             var team_name = $("#edit-team-name").val();
             var team_leader_id = $("#edit-select-leader").val()
             
             if (team_name == '') team_name = $("#team_id_" + team_id + " td:first-child a").text();
             if (team_leader_id == '-1') team_leader_id = $("#team_id_" + team_id + " td:nth-child(3)").attr("value");
-            console.log(team_leader_id);
 
             var ret = false;
             $.ajax({
@@ -287,7 +284,6 @@
                     team_leader_id: team_leader_id, 
                 }),
                 success: function(data) {
-                    console.log(data);
                     if (data.error_code == 0) {
                         $("#team_id_" + team_id + " td:nth-child(1) a").text( team_name );
                         $("#team_id_" + team_id + " td:nth-child(3)").val( data.new_team_leader_id );

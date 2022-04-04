@@ -448,12 +448,14 @@ def team_detail(request, team_id):
     members = TeamMember.get_team_members(team_id)
     not_members = User.list_not_members(team_id)
     team = Team.query(team_id)
+    team_name = team.name
     if team.leader_id == None:
         team_leader_id = -1
     else:
         team_leader_id = team.leader_id.id
     return render(request, "manage-team/team_detail.html", {
         "team_id": team_id, 
+        "team_name": team_name, 
         "team_leader_id": team_leader_id, 
         "not_members": not_members, 
         "members": members

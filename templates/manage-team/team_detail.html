@@ -57,7 +57,7 @@
         
         <div class="row wrapper border-bottom white-bg page-heading">
             <div class="col-lg-10">
-                <h2>Team Detail</h2>
+                <h2>{{team_name}} Members</h2>
                 <ol class="breadcrumb">
                     <li>
                         <a href="{% url 'index' %}">Home</a>
@@ -243,8 +243,6 @@
         });
         
         $("#members-submit-button").click(function() {
-            const urlParams = new URLSearchParams(window.location.href);
-            
             var selected_members = $("#add-select-member").chosen().val();
             
             var ret = false;
