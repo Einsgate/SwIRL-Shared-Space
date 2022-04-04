@@ -12,7 +12,6 @@ from .models import *
 from .errors import *
 from .const import *
 from django.contrib.auth.decorators import login_required
-from ctypes.test.test_pickling import name
 
 from django.core.mail import send_mail
 
