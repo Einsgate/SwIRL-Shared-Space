@@ -88,7 +88,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Only a user with high authority can add a team. -->
             <!-- TODO: to make sure which authority level is here -->
             {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
@@ -114,35 +114,25 @@
                                     <!--    <input type="text" disabled="" placeholder="{{request.user.username}}" class="form-control"  id="team-leader">-->
                                     <!--</div>-->
                                     <div class="form-group">
-                                        <label>Training</label>
+                                        <label>Training Title</label>
                                         <input type="text" class="form-control" id="training-name">
-                                        <label>Description</label>
+                                        <label>Description of Details</label>
                                         <input type="text" class="form-control" id="training-description">
-                                        <label>Start Time</label>
-                                        <input type="text" class="form-control" id="start-time">
-                                        <label>End Time</label>
-                                        <input type="text" class="form-control" id="end-time">
+			                           <div class="form-group" id="startDate">
+			                               <label class="font-normal">Start Time</label>
+			                               <div class="input-group date">
+			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='startDate' class="form-control" value="03/04/2020">
+			                               </div>
+			                           </div>
+			                           <div class="form-group" id="endDate">
+			                               <label class="font-normal">End Time</label>
+			                               <div class="input-group date">
+			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='endDate' class="form-control" value="03/04/2020">
+			                               </div>
+			                           </div>
                                         <label>Zone</label>
                                         <input type="text" class="form-control" id="zone-id">
                                     </div>
-                                    <script type="text/javascript">
-                                        $(function () {
-                                            $('#start-time').datetimepicker({
-                                                icons: {
-                                                    format: 'LT'
-                                                }
-                                          });
-                                        });
-                                    </script>
-                                    <script type="text/javascript">
-                                        $(function () {
-                                            $('#end-time').datetimepicker({
-                                                icons: {
-                                                    format: 'LT'
-                                                }
-                                          });
-                                        });
-                                    </script>
                                 </form>
                             </div>
                             <div class="modal-footer">
@@ -171,30 +161,15 @@
     <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
     <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
 
-    <!-- Custom and plugin javascript -->
-    <script src="/static/js/inspinia.js"></script>
-    <script src="/static/js/plugins/pace/pace.min.js"></script>
-
     <!-- Data picker -->
     <script src="/static/js/plugins/datapicker/bootstrap-datepicker.js"></script>
 
-    <!-- FooTable -->
-    <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-
-    <!-- Page-Level Scripts -->
-    <!-- Mainly scripts -->
-    <script src="/static/js/jquery-3.1.1.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
-    <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
-    <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
-
     <!-- Custom and plugin javascript -->
     <script src="/static/js/inspinia.js"></script>
     <script src="/static/js/plugins/pace/pace.min.js"></script>
 
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-
 
 	<script>
 		function deleteItem(id) {
@@ -217,14 +192,26 @@
 		}
 	</script>
 
-    Page-Level Scripts 
     <script>
-        $(document).ready(function() {
+		$('#startDate .input-group.date').datepicker({
+		    todayBtn: "linked",
+		    keyboardNavigation: false,
+		    forceParse: false,
+		    calendarWeeks: true,
+		    autoclose: true
+		});
+		$('#endDate .input-group.date').datepicker({
+		    todayBtn: "linked",
+		    keyboardNavigation: false,
+		    forceParse: false,
+		    calendarWeeks: true,
+		    autoclose: true
+		});
+
+    	$(document).ready(function() {
             $('.footable').footable();
         });
-    </script>
-    
-    <script>
+
         $("#training-add-button").click(function() {
             $("#trainingModal").modal();
         });
