@@ -103,9 +103,9 @@
 	                                        <div class="btn-group">
 	                                            {% if request.user.role_id.id == 0 or  request.user.role_id.id == 1 %}
 	                                                <button class="btn-white btn btn-xs" type="button" onclick="edit_team({{team.id}})">Edit</button>
-	                                            {% include 'manage-team/edit_team_modal.html' %}
+    	                                            {% include 'manage-team/edit_team_modal.html' %}
 	                                            
-	                                            <button class="btn-white btn btn-xs" type="button" onclick="delete_team({{team.id}})">Delete</button>
+	                                                <button class="btn-white btn btn-xs" type="button" onclick="delete_team({{team.id}})">Delete</button>
 	                                            {% endif %}
 	                                        </div>
 	                                    </td>
@@ -170,6 +170,7 @@
             $('.chosen-select').chosen({
                 width: "100%", 
                 search_contains: true, 
+                allow_single_deselect: true,
             });
         });
     </script>
