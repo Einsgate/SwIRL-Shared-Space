@@ -446,6 +446,7 @@ def team_detail(request, team_id):
     else:
         team_leader_id = team.leader_id.id
     return render(request, "manage-team/team_detail.html", {
+        "team_id": team_id, 
         "team_leader_id": team_leader_id, 
         "not_members": not_members, 
         "members": members
@@ -455,7 +456,16 @@ def team_detail(request, team_id):
 def team_detail_update(request, team_id):
     try:
         if request.method == 'POST':
-            # [TODO] fill out the steps to update team details.
+            params = json.loads(request.body)
+            if 'selected_members' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                })
+                
+            for user_id in params['selected_members']:
+                TeamMember.objects.get_or_create(user_id = User.query(user_id), team_id = Team.query(team_id))
+                
             return JsonResponse({"error_code": 0,});
     except Exception as e:
         return JsonResponse({
@@ -474,8 +484,14 @@ def team_detail_delete(request, team_id):
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
+        
+        teammember = TeamMember.query(params['id'])
+        team = teammember.team_id
     
-        TeamMember.delete(params['id'])
+        if team.leader_id == teammember.user_id: 
+            team.leader_id = None
+            
+        teammember.delete();
         
         return JsonResponse({
             "error_code": 0,

@@ -116,6 +116,10 @@ class TeamMember(models.Model):
     join_time = models.DateTimeField(auto_now_add=True)
     
     @staticmethod
+    def query(member_id):
+        return TeamMember.objects.get(pk = member_id);
+    
+    @staticmethod
     def get_team_members(team_id):
         return TeamMember.objects.filter(team_id = team_id)
     @staticmethod

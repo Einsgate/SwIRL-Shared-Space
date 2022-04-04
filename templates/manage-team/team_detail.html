@@ -12,6 +12,39 @@
     <link href="/static/css/animate.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
     <link href="/static/css/plugins/datapicker/datepicker3.css" rel="stylesheet">
+    
+    <!-- multi selector -->
+    <link href="/static/css/plugins/iCheck/custom.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/chosen/bootstrap-chosen.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/plugins/chosen/chosen.css">
+
+    <link href="/static/css/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/colorpicker/bootstrap-colorpicker.min.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/cropper/cropper.min.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/switchery/switchery.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/jasny/jasny-bootstrap.min.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/nouslider/jquery.nouislider.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/ionRangeSlider/ion.rangeSlider.css" rel="stylesheet">
+    <link href="/static/css/plugins/ionRangeSlider/ion.rangeSlider.skinFlat.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/awesome-bootstrap-checkbox/awesome-bootstrap-checkbox.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/clockpicker/clockpicker.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/daterangepicker/daterangepicker-bs3.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/select2/select2.min.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet">
+
+    <link href="/static/css/plugins/dualListbox/bootstrap-duallistbox.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -69,13 +102,17 @@
 	                                <tr id="member_id_{{member.id}}">
 	                                    <td>{{member.user_id.username}}</a></td>
 	                                    <td>{{member.user_id.email}}</td>
-	                                    <td>{{member.user_id.role_id.role_name}}</td>
+	                                    {% if member.user_id.id == team_leader_id %}
+	                                        <td>Leader</td>
+	                                    {% else %}
+	                                        <td>Member</td>
+                                        {% endif %}
 	                                    <td>{{member.join_time}}</td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
-	                                            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
-	                                            <button onclick="delete_member('{{member.id}}')" class="btn-white btn btn-xs">Delete</button>
-	                                            {% endif %}
+	                                            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 or request.user.id == team_leader_id and member.user_id.id != team_leader_id%}
+	                                                <button onclick="delete_member('{{member.id}}')" class="btn-white btn btn-xs">Delete</button>
+                                                {% endif %}
 	                                        </div>
 	                                    </td>
 	                                </tr>
@@ -125,8 +162,7 @@
                                 </form>
                             </div>
                             <div class="modal-footer">
-                                <button class="btn btn-primary pull-left" type="submit" id="team-submit-button" value={{request.user.id}}>Add</button>
-                                <button class="btn btn-white pull-right" type="cancel" id="team-cancel-button">Cancel</button>
+                                <button class="btn btn-primary" type="button" id="members-submit-button">Invite</button>
                             </div>
                           </div>
                           
@@ -161,26 +197,14 @@
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
 
     <!-- Page-Level Scripts -->
-    <!-- Mainly scripts -->
-    <script src="/static/js/jquery-3.1.1.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
-    <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
-    <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
-
-    <!-- Custom and plugin javascript -->
-    <script src="/static/js/inspinia.js"></script>
-    <script src="/static/js/plugins/pace/pace.min.js"></script>
-
-    <!-- FooTable -->
-    <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-
-    <!-- Page-Level Scripts -->
+    <script src="/static/js/plugins/chosen/chosen.jquery.js" type="text/javascript"></script>
+    <script src="/static/js/plugins/chosen/docsupport/prism.js" type="text/javascript" charset="utf-8"></script>
     <script>
         $(document).ready(function() {
             $('.footable').footable();
             
             var config = {
-                '.chosen-select'           : {},
+                '.chosen-select'           : {width: "100%", search_contains: true, },
                 '.chosen-select-deselect'  : { allow_single_deselect: true },
                 '.chosen-select-no-single' : { disable_search_threshold: 10 },
                 '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
@@ -195,10 +219,11 @@
     
     <script>
 		function delete_member(id) {
-		    consolo.log("{%url 'reservations:team_detail_delete' team_id = {{team_id}}}");
 		    if(confirm("Are you sure to Delete?")){
+		        
+		        var ret = false;
 		        $.ajax({
-		            url:"{%url 'reservations:team_detail_delete' team_id = {{team_id}}}",
+		            url:"{% url 'team_view'%}/{{team_id}}/delete", 
 		            data:{id: id},
                     type: "GET",
 		            success:function(msg){
@@ -216,16 +241,18 @@
 	</script>
     
     <script>
-        $("#member-add-button").click(function() {
+        $("#members-add-button").click(function() {
             $("#add-member-modal").modal();
         });
         
-        $("#member-submit-button").click(function() {
-            var selected_members = $("#add-select-member").chosen().val()
-            console.log(selected_members);
+        $("#members-submit-button").click(function() {
+            const urlParams = new URLSearchParams(window.location.href);
             
+            var selected_members = $("#add-select-member").chosen().val();
+            
+            var ret = false;
             $.ajax({
-                url: '{% url "team_detail_update" %}',
+                url:"{% url 'team_view'%}/{{team_id}}/update", 
                 type: "POST",
                 data: JSON.stringify({ 
                     selected_members: selected_members,
@@ -239,7 +266,8 @@
                         ret = false;
                     }
                     
-                    $('#teamModal').modal('hide');
+                    $('#add-member-modal').modal('hide');
+                    window.location.reload();
                 },
             });
             return ret;
