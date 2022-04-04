@@ -47,6 +47,10 @@ class Reservation(models.Model):
 class Role(models.Model):
     role_name = models.CharField(max_length = 255)
 
+    @staticmethod
+    def findById(id = 0):
+        return Role.objects.filter(id = id).first()
+
 class User(AbstractUser):
     #role_id = models.IntegerField(default = 3)
     role_id = models.ForeignKey('Role', on_delete = models.CASCADE, default = 3)
