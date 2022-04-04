@@ -26,10 +26,10 @@
                     <li>
                         <a ><i class="fa fa-diamond"></i> <span class="nav-label">Users</span><span class="fa arrow"></span></a>
                         <ul class="nav nav-second-level">
-                            <li class="active"><a >Role Management</a></li>
-                            <li><a >Staff Management</a></li>
-                            <li><a >Leader Management</a></li>
-                            <li><a >Member Management</a></li>
+                            <li class="active"><a href='{% url "staff_index" %}'>Staff Management</a></li>
+                            <li><a href='{% url "leader_index" %}'>Leader Management</a></li>
+                            <li><a href='{% url "member_index" %}'>Member Management</a></li>
+                            <li><a href='{% url "authority_user" %}'>Authority User</a></li>
                         </ul>
                     </li>
                     <li>

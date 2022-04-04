@@ -1,14 +1,24 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
-    
+
     #path('login', views.accounts_login, name='cas_ng_login'),
     #path('accounts/logout', views.accounts_logout, name='cas_ng_logout'),
-    
+
     path('index.html', views.index, name='index_html'),
+    #user mngment
+    path('usermng/staff', views.usermng_staff, name='staff_index'),
+    path('usermng/leader', views.usermng_leader, name='leader_index'),
+    path('usermng/member', views.usermng_member, name='member_index'),
+    path('usermng/deleteByRole', views.user_delete, name='user_delete'),
+    path('usermng/authUser', views.authority_user, name='authority_user'),
+    re_path('usermng/authUserDetail/(\d+)/', views.authority_detail, name='authority_detail'),
+    path('usermng/authUserUpdate', views.authority_udpate, name='authority_update'),
+
+    #reservation
     path('reservation/index', views.index, name='reservation_index'),
     path('reservation/index.html', views.index, name='reservation_index_html'),
     path('reservation/list', views.reservation_list, name='reservation_list'),
@@ -16,7 +26,7 @@ urlpatterns = [
     path('reservation/create', views.reservation_create, name='reservation_create'),
     path('reservation/delete', views.reservation_delete, name='reservation_delete'),
     path('zone/list', views.zone_list, name='zone_list'),
-    
+
     # team
     path('team/view', views.team_view, name='team_view'), 
     path('team/view/<int:team_id>/', views.team_detail, name='team_detail'), 

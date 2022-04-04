@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q, Count
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser
-
+from .const import *
 # Create your models here.
 
 class Reservation(models.Model):
@@ -59,7 +59,19 @@ class User(AbstractUser):
     #     user_list = User.objects.filter(username = username, password = password)
     #     if len(user_list) == 1:
     #         return user_list.first()
-    
+    @staticmethod
+    def list_all(role_id=0):
+        return User.objects.filter(~Q(role_id=ROLE_ADMIN)).order_by("-id")
+    @staticmethod
+    def list_staff(role_id=0):
+        return User.objects.filter(role_id = role_id)
+    @staticmethod
+    def delete(id = 0):
+        user = User.objects.filter(id = id).delete()
+    @staticmethod
+    def findUserById(id = 0):
+        return User.objects.filter(id = id)
+
 class Team(models.Model):
     name = models.CharField(max_length = 50)
     leader_id = models.ForeignKey('User', on_delete = models.SET_NULL, blank=True, null=True)
@@ -94,7 +106,10 @@ class TeamMember(models.Model):
     @staticmethod
     def get_team_members(team_id):
         return TeamMember.objects.filter(team_id = team_id)
-    
+    @staticmethod
+    def get_by_team_members(team_id, user_id):
+        return TeamMember.objects.filter(team_id = team_id, user_id = user_id).first()
+
 class Training(models.Model):
     #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50)

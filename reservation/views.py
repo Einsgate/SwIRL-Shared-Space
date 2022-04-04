@@ -12,6 +12,9 @@ from .models import *
 from .errors import *
 from .const import *
 from django.contrib.auth.decorators import login_required
+from ctypes.test.test_pickling import name
+
+from django.core.mail import send_mail
 
 @login_required
 def index(request):
@@ -19,7 +22,104 @@ def index(request):
     return render(request, "index.html", {
         "zone_list": zone_list,
     })
-   
+
+@login_required
+def usermng_staff(request):
+    staff_list = User.list_staff(ROLE_STAFF)
+    return render(request, "staff_index.html", {
+        "staff_list": staff_list,
+    })
+
+@csrf_exempt
+def user_delete(request):
+    if request.method == 'GET':
+        params = request.GET
+
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            })
+
+        #Check if admin or staff
+        
+        User.delete(params['id'])
+
+        return JsonResponse({
+            "error_code": 0,
+        })
+
+@login_required
+def usermng_leader(request):
+    leader_list = User.list_staff(ROLE_LEAD)
+    return render(request, "leader_index.html", {
+        "leader_list": leader_list,
+    })
+
+@login_required
+def usermng_member(request):
+    member_list = User.list_staff(ROLE_MEMBER)
+    return render(request, "member_list.html", {
+        "member_list": member_list,
+    })
+
+@login_required
+def authority_detail(request, id):
+    user = User.findUserById(id)
+    team_list = Team.list_all(0)
+    return render(request, "authority_detail.html", {
+        "userDetail": user,
+        "team_list": team_list,
+    })
+@login_required
+def authority_udpate(request):
+    team_list = Team.list_all(0)
+    if request.method == 'GET':
+        params = request.GET
+    userId = params['userId']
+    roleId = params['roleId']
+    teamId = params['teamId']
+    user = User.findUserById(userId).first()
+    print(user.role_id.id)
+    #if roleId == ROLE_STAFF :
+    #    print("~~~~~~")
+    user.role_id.id = roleId
+    print(user.username)
+    print(user.role_id.id)
+    user.save()
+
+    #if(roleId == ROLE_LEAD):
+    #    team_m = TeamMember(team_id = teamId, user_id = userId)
+    #    team_m.save()
+    #    user.role_id.id = roleId
+    #    user.save();
+
+    return render(request, "authority_detail.html", {
+        "userDetail": user,
+        "team_list": team_list,
+    })
+    
+@login_required
+def authority_user(request):
+    user_list = User.list_all(0)
+    team_list = Team.list_all(0)
+
+    #send_mail('Test email', 'First Django email by QQ', '394887350@qq.com', ['hibernatehou@tamu.edu'], fail_silently=False)
+
+    email_list = []
+
+    for r in user_list:
+        email_list.append({
+            "name": r.email,
+        })
+
+    return render(request, "authority_user.html", {
+        "user_list": user_list,
+        "team_list": team_list,
+        "email_list": email_list,
+    })
+
 # POST https://console.aws.amazon.com/cloud9/ide/79b97093f17f4c9ab2bb12c9205ebaf7/create
 # {
 # user_id: ...    
@@ -274,8 +374,8 @@ def training_create(request):
             training.save()
             return JsonResponse({
                 "error_code": 0, 
-                "team_id": team.id, 
-                "team_name": team.name
+                #"team_id": team.id, 
+                #"team_name": team.name
             })
     except Exception as e:
         return JsonResponse({
