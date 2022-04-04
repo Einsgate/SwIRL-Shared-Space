@@ -150,24 +150,86 @@ def zone_list(request):
 def team_view(request):
     if request.method == 'GET':
         if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
+            users = User.list_all()
             teams = Team.list_all()
             team_list_title = 'Team List'
         else:
             teams = Team.list_all(request.user.id)
             team_list_title = 'My Teams'
-        return render(request, "team_list.html", {
+        return render(request, "manage-team/team_list.html", {
+            "users": users, 
             "teams": teams,
             "team_list_title": team_list_title,
         })
     
+# update the name and leader of a team
+@csrf_exempt
+def team_view_update(request):
+    try:
+        if request.method == 'GET':
+            team_id = request.GET.get('team_id')
+            team = Team.query(team_id)
+            teammembers = TeamMember.get_team_members(team_id)
+            team_name = team.name;
+            team_leader_id = team.leader_id.id;
+            teammembers_user_id = [[teammember.user_id.id,  teammember.user_id.username, teammember.user_id.email] for teammember in teammembers]
+            return JsonResponse({
+                "error_code": 0, 
+                "team_name": team_name, 
+                "team_leader_id": team_leader_id, 
+                "members": teammembers_user_id, 
+            });
+            
+        if request.method == 'POST':
+            params = json.loads(request.body)
+            if 'team_id' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                });
+                
+            team = Team.query(params['team_id']);
+                
+            # update the team name
+            updated = False;
+            if 'team_name' in params: 
+                new_team_name = params['team_name']
+                if new_team_name != team.name:
+                    updated = True
+                    team.name = new_team_name
+            
+            print(params)
+            if 'team_leader_id' in params:
+                new_team_leader_id = params['team_leader_id']
+                print(new_team_leader_id)
+                new_team_leader = User.query(new_team_leader_id)
+                if new_team_leader_id != team.leader_id.id:
+                    updated = True
+                    team.leader_id = new_team_leader
+                    
+            if updated:
+                team.save();
+
+            return JsonResponse({
+                "error_code": 0,
+                "new_team_leader_id": new_team_leader_id, 
+                "new_team_leader_username": new_team_leader.username, 
+            });
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+        })
+    
+    
 def team_detail(request, team_id):
     members = TeamMember.get_team_members(team_id)
-    return render(request, "team_detail.html", {
+    return render(request, "manage-team/team_detail.html", {
         "members": members
     })
     
-    
-def team_details_update(request, tid):
+@csrf_exempt    
+def team_detail_update(request, tid):
     try:
         if request.method == 'POST':
             # [TODO] fill out the steps to update team details.
@@ -203,20 +265,38 @@ def team_create(request):
             params = json.loads(request.body)
 
             # Check required fields
+            params = json.loads(request.body)
             if 'name' not in params:
                 return JsonResponse({
-                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
-                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
-                })
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                });
                 
-            # Create team
-            team = Team(name = params['name'])
-            team.save()
-            return JsonResponse({
-                "error_code": 0, 
-                "team_id": team.id, 
-                "team_name": team.name
-            })
+            new_team_name = params['name']
+            
+            # Create a team
+            if 'leader_id' in params:
+                print(params)
+                new_team_leader = User.query(params['leader_id'])
+                team = Team(name = new_team_name, leader_id = new_team_leader)
+                team.save()
+                
+                teammember = TeamMember(team_id = team, user_id = new_team_leader)
+                teammember.save();
+                return JsonResponse({
+                    "error_code": 0,
+                    # "team_id": team.id, 
+                    # "new_team_name": new_team_name, 
+                    # "new_team_leader": new_team_leader, 
+                });
+            else:
+                team = Team(name = new_team_name)
+                team.save()
+                return JsonResponse({
+                    "error_code": 0, 
+                    # "team_id": team.id, 
+                    # "team_name": team.name
+                })
     except Exception as e:
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,

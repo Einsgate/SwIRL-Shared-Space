@@ -60,6 +60,13 @@ class User(AbstractUser):
     #     if len(user_list) == 1:
     #         return user_list.first()
     
+    @staticmethod
+    def list_all():
+        return User.objects.all()
+        
+    def query(user_id):
+        return User.objects.get(pk = user_id)
+    
 class Team(models.Model):
     name = models.CharField(max_length = 50)
     leader_id = models.ForeignKey('User', on_delete = models.SET_NULL, blank=True, null=True)
@@ -80,7 +87,7 @@ class Team(models.Model):
         
     @staticmethod
     def query(team_id):
-        return Team.objects.filter(id = team_id)
+        return Team.objects.get(pk = team_id)
         
     @staticmethod
     def delete(id = 0):
