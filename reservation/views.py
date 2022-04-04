@@ -261,7 +261,10 @@ def team_view_update(request):
             team = Team.query(team_id)
             teammembers = TeamMember.get_team_members(team_id)
             team_name = team.name;
-            team_leader_id = team.leader_id.id;
+            if team.leader_id == None:
+                team_leader_id = -1
+            else:
+                team_leader_id = team.leader_id.id
             teammembers_user_id = [[teammember.user_id.id,  teammember.user_id.username, teammember.user_id.email] for teammember in teammembers]
             return JsonResponse({
                 "error_code": 0, 
@@ -287,13 +290,17 @@ def team_view_update(request):
                 if new_team_name != team.name:
                     updated = True
                     team.name = new_team_name
+                    
+            print(params['team_leader_id'] == "-1", params['team_leader_id']);
             
-            print(params)
-            if 'team_leader_id' in params:
+            new_team_leader_id = "-1"
+            new_team_username = ""
+            if 'team_leader_id' in params and params['team_leader_id'] != "-1":
                 new_team_leader_id = params['team_leader_id']
                 print(new_team_leader_id)
                 new_team_leader = User.query(new_team_leader_id)
-                if new_team_leader_id != team.leader_id.id:
+                new_team_username = new_team_leader.username
+                if team.leader_id == None or new_team_leader_id != team.leader_id.id:
                     updated = True
                     team.leader_id = new_team_leader
                     
@@ -303,7 +310,7 @@ def team_view_update(request):
             return JsonResponse({
                 "error_code": 0,
                 "new_team_leader_id": new_team_leader_id, 
-                "new_team_leader_username": new_team_leader.username, 
+                "new_team_leader_username": new_team_username, 
             });
     except Exception as e:
         return JsonResponse({
@@ -346,7 +353,7 @@ def team_create(request):
             new_team_name = params['name']
             
             # Create a team
-            if 'leader_id' in params:
+            if 'leader_id' in params and params['leader_id'] != '-1':
                 print(params)
                 new_team_leader = User.query(params['leader_id'])
                 team = Team(name = new_team_name, leader_id = new_team_leader)
@@ -490,7 +497,8 @@ def team_detail_delete(request, team_id):
     
         if team.leader_id == teammember.user_id: 
             team.leader_id = None
-            
+            team.save();
+        
         teammember.delete();
         
         return JsonResponse({

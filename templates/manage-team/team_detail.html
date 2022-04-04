@@ -221,7 +221,6 @@
 		function delete_member(id) {
 		    if(confirm("Are you sure to Delete?")){
 		        
-		        var ret = false;
 		        $.ajax({
 		            url:"{% url 'team_view'%}/{{team_id}}/delete", 
 		            data:{id: id},
@@ -234,8 +233,6 @@
 		            }
 		        });
 		        return true;
-			}else{
-				alert("Cancel Delete Operation");
 			}
 		}
 	</script>
