@@ -12,7 +12,6 @@ from .models import *
 from .errors import *
 from .const import *
 from django.contrib.auth.decorators import login_required
-from ctypes.test.test_pickling import name
 
 from django.core.mail import send_mail
 
@@ -79,21 +78,12 @@ def authority_udpate(request):
         params = request.GET
     userId = params['userId']
     roleId = params['roleId']
-    teamId = params['teamId']
+    #teamId = params['teamId']
     user = User.findUserById(userId)
-    print(user.role_id.id)
-    #if roleId == ROLE_STAFF :
-    #    print("~~~~~~")
-    user.role_id.id = roleId
-    print(user.username)
-    print(user.role_id.id)
-    user.save()
-
-    #if(roleId == ROLE_LEAD):
-    #    team_m = TeamMember(team_id = teamId, user_id = userId)
-    #    team_m.save()
-    #    user.role_id.id = roleId
-    #    user.save();
+    if roleId == '1' :
+        role = Role.findById(ROLE_STAFF)
+        user.role_id = role
+        user.save()
 
     return render(request, "authority_detail.html", {
         "userDetail": user,
@@ -154,7 +144,7 @@ def reservation_create(request):
                     "error_code": ERR_RESERVATION_CONFLICT_CODE,
                     "error_msg": ERR_RESERVATION_CONFLICT_MSG
                 })
-                
+
             # Create reservation
             reservation.save()
             return JsonResponse({
@@ -410,9 +400,9 @@ def training_delete(request):
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
-    
+
         Training.delete(params['id'])
-        
+
         return JsonResponse({
             "error_code": 0,
         })
@@ -430,8 +420,10 @@ def training_create(request):
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
                 })
                 
-            # Create team
-            training = Training(name = params['name'])
+            # Create training
+            print(params)
+            training = Training(name = params['name'], description= params['desc'], )
+            
             training.save()
             return JsonResponse({
                 "error_code": 0, 
@@ -444,8 +436,7 @@ def training_create(request):
             "error_msg": str(e),
             # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
         })
-        
-        
+
 def team_detail(request, team_id):
     members = TeamMember.get_team_members(team_id)
     not_members = User.list_not_members(team_id)

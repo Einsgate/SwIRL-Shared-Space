@@ -18,11 +18,8 @@
     <div id="wrapper">
 		{% include 'common/nav.html' %}
         <div id="page-wrapper" class="gray-bg">
-
         {% include 'common/logout.html' %}
-        
-        
-        
+
         <div class="row wrapper border-bottom white-bg page-heading">
             <div class="col-lg-10">
                 <h2>{{ training_list_title }}</h2>
@@ -59,8 +56,7 @@
                                 <tbody id="training_list">
                                 	{% for t in training %}  
 	                                <tr id="instructor_id_{{t.id}}">
-	                                    <td><a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a></td>
-	                                    <td>{{t.instructor_id}}</td>
+	                                    <td><!-- a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a-->{{t.name}}</td>
 	                                    <td>{{t.description}}</td>
 	                                    <td>{{t.start_time}}</td>
 	                                    <td>{{t.end_time}}</td>
@@ -88,7 +84,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Only a user with high authority can add a team. -->
             <!-- TODO: to make sure which authority level is here -->
             {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
@@ -114,35 +110,25 @@
                                     <!--    <input type="text" disabled="" placeholder="{{request.user.username}}" class="form-control"  id="team-leader">-->
                                     <!--</div>-->
                                     <div class="form-group">
-                                        <label>Training</label>
-                                        <input type="text" class="form-control" id="training-name">
-                                        <label>Description</label>
-                                        <input type="text" class="form-control" id="training-description">
-                                        <label>Start Time</label>
-                                        <input type="text" class="form-control" id="start-time">
-                                        <label>End Time</label>
-                                        <input type="text" class="form-control" id="end-time">
+                                        <label>Training Title</label>
+                                        <input type="text" class="form-control" id="trainingName">
+                                        <label>Description of Details</label>
+                                        <input type="text" class="form-control" id="trainingDesc">
+			                           <div class="form-group" id="startTime">
+			                               <label class="font-normal">Start Time</label>
+			                               <div class="input-group date">
+			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='startDate' class="form-control" value="03/04/2020">
+			                               </div>
+			                           </div>
+			                           <div class="form-group" id="startTime">
+			                               <label class="font-normal">End Time</label>
+			                               <div class="input-group date">
+			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='endDate' class="form-control" value="03/04/2020">
+			                               </div>
+			                           </div>
                                         <label>Zone</label>
-                                        <input type="text" class="form-control" id="zone-id">
+                                        <input type="text" class="form-control" id="zoneId">
                                     </div>
-                                    <script type="text/javascript">
-                                        $(function () {
-                                            $('#start-time').datetimepicker({
-                                                icons: {
-                                                    format: 'LT'
-                                                }
-                                          });
-                                        });
-                                    </script>
-                                    <script type="text/javascript">
-                                        $(function () {
-                                            $('#end-time').datetimepicker({
-                                                icons: {
-                                                    format: 'LT'
-                                                }
-                                          });
-                                        });
-                                    </script>
                                 </form>
                             </div>
                             <div class="modal-footer">
@@ -171,30 +157,15 @@
     <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
     <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
 
-    <!-- Custom and plugin javascript -->
-    <script src="/static/js/inspinia.js"></script>
-    <script src="/static/js/plugins/pace/pace.min.js"></script>
-
     <!-- Data picker -->
     <script src="/static/js/plugins/datapicker/bootstrap-datepicker.js"></script>
 
-    <!-- FooTable -->
-    <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-
-    <!-- Page-Level Scripts -->
-    <!-- Mainly scripts -->
-    <script src="/static/js/jquery-3.1.1.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
-    <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
-    <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
-
     <!-- Custom and plugin javascript -->
     <script src="/static/js/inspinia.js"></script>
     <script src="/static/js/plugins/pace/pace.min.js"></script>
 
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-
 
 	<script>
 		function deleteItem(id) {
@@ -204,8 +175,7 @@
 		            data:{id: id},
                     type: "GET",
 		            success:function(msg){
-		            	$("#training_id_"+id).remove();
-		            	
+		            	$(location).attr('href','{% url "training_view" %}');
 		            },
 		            error:function(xhr,textstatus,thrown){
 		            }
@@ -217,22 +187,37 @@
 		}
 	</script>
 
-    Page-Level Scripts 
     <script>
-        $(document).ready(function() {
+		$('#startTime .input-group.date').datepicker({
+		    todayBtn: "linked",
+		    keyboardNavigation: false,
+		    forceParse: false,
+		    calendarWeeks: true,
+		    autoclose: true
+		});
+		$('#endTime .input-group.date').datepicker({
+		    todayBtn: "linked",
+		    keyboardNavigation: false,
+		    forceParse: false,
+		    calendarWeeks: true,
+		    autoclose: true
+		});
+
+    	$(document).ready(function() {
             $('.footable').footable();
         });
-    </script>
-    
-    <script>
+
         $("#training-add-button").click(function() {
             $("#trainingModal").modal();
         });
-        
+
         $("#training-submit-button").click(function() {
-            var training_name = document.getElementById("training-name").value;
-            //var team_leader_id = $(this).attr('value');
-            
+            var trainingName = $("#trainingName");
+            var trainingDesc = $("#trainingDesc");
+            var startDate = $("#startDate");
+            var endDate = $("#endDate");
+            var zoneId = $("#zoneId");
+			console.log("name=["+trainingName+"] desc=["+trainingDesc+"] start=["+startDate+"] end=["+endDate+"] zone=["+zoneId+"] ");
 //             if(!confirm('Create a new team with the name ' + team_name + '?')){
 // 		        return false;
 // 			}
@@ -241,9 +226,12 @@
                 url: '{% url "training_create" %}',
                 type: "POST",
                 data: JSON.stringify({ 
-                    name: training_name, 
+                    name: trainingName,
+                    desc: trainingDesc,
+                    startDate: startDate,
+                    endDate: endDate,
+                    zoneId:zoneId,
                     //leader_id: team_leader_id,
-                    
                 }),
                 success: function(data) {
                     console.log(data);
@@ -255,7 +243,7 @@
                         ret = false;
                     }
                     
-                    var training_name_ele = document.getElementById("training-name");
+                    var training_name_ele = document.getElementById("trainingName");
                     training_name_ele.value = '';
                     $('#trainingModal').modal('hide');
                     window.location.reload();
