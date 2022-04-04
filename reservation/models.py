@@ -70,7 +70,7 @@ class User(AbstractUser):
         user = User.objects.filter(id = id).delete()
     @staticmethod
     def findUserById(id = 0):
-        return User.objects.filter(id = id)
+        return User.objects.filter(id = id).first()
 
 class Team(models.Model):
     name = models.CharField(max_length = 50)
