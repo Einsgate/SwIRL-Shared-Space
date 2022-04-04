@@ -71,7 +71,15 @@ class User(AbstractUser):
     @staticmethod
     def findUserById(id = 0):
         return User.objects.filter(id = id).first()
-
+        
+    @staticmethod
+    def list_not_members(team_id):
+        return User.objects.exclude(pk__in=TeamMember.get_team_members(team_id).values_list('user_id', flat=True))
+        
+    @staticmethod
+    def query(user_id):
+        return User.objects.get(pk = user_id)
+    
 class Team(models.Model):
     name = models.CharField(max_length = 50)
     leader_id = models.ForeignKey('User', on_delete = models.SET_NULL, blank=True, null=True)
@@ -92,7 +100,7 @@ class Team(models.Model):
         
     @staticmethod
     def query(team_id):
-        return Team.objects.filter(id = team_id)
+        return Team.objects.get(pk = team_id)
         
     @staticmethod
     def delete(id = 0):

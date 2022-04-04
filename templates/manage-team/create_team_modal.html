@@ -1,0 +1,37 @@
+<div class="modal fade" id="create-team-modal" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4>Create a team</h4>
+        </div>
+        <div class="modal-body">
+            <form role="form">
+                <div class="form-group">
+                    <label>Team name</label>
+                    <input type="text" class="form-control" id="create-team-name">
+                </div>
+                <div class="form-group", id="create-team-leader">
+                    <label for="select">
+                        Team leader
+                    </label>
+                    <div>
+                        <select data-placeholder="Please enter the username or email..." class="chosen-select" tabindex="2" style="width:350px;">
+                            <option value=""></option>
+                            {% for user in users %}
+                                <option value={{user.id}}>{{user.username}} ({{user.email}})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" id="create-team-add-button">Add</button>
+        </div>
+      </div>
+      
+    </div>
+</div> 

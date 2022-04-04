@@ -22,7 +22,6 @@
         {% include 'common/logout.html' %}
         
         
-        
         <div class="row wrapper border-bottom white-bg page-heading">
             <div class="col-lg-10">
                 <h2>Team Detail</h2>
@@ -65,9 +64,9 @@
 	                                    <th class="text-right">Action</th>
 	                                </tr>
                                 </thead>
-                                <tbody id="team_detail">
+                                <tbody id="member_table">
                                 	{% for member in members %}  
-	                                <tr id="member_id_{{member.user_id}}">
+	                                <tr id="member_id_{{member.id}}">
 	                                    <td>{{member.user_id.username}}</a></td>
 	                                    <td>{{member.user_id.email}}</td>
 	                                    <td>{{member.user_id.role_id.role_name}}</td>
@@ -75,7 +74,7 @@
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
 	                                            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
-	                                            <!--<button id="deleteSubmit" onclick="deleteItem('{{team.id}}')" class="btn-white btn btn-xs">Delete</button>-->
+	                                            <button onclick="delete_member('{{member.id}}')" class="btn-white btn btn-xs">Delete</button>
 	                                            {% endif %}
 	                                        </div>
 	                                    </td>
@@ -97,45 +96,44 @@
             </div>
             
             <!-- Only a user with high authority can add a team. -->
-            <!-- TODO: to make sure which authority level is here -->
-            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
-            <!--<div class="row">-->
-            <!--    <div class="col-lg-12">-->
-            <!--        <button class="btn btn-primary  pull-right" type="button" id="team-add-button", style="align: right">Add Member</button> -->
+            {% if request.user.role_id.id == 0 or request.user.id == team_leader_id %}
+            <div class="row">
+                <div class="col-lg-12">
+                    <button class="btn btn-primary  pull-right" type="button" id="members-add-button", style="align: right">Invite Member</button> 
                    
-                    <!-- The popup dialog to create a team. -->
-                    <!-- Modal -->
-            <!--        <div class="modal fade" id="teamModal" role="dialog">-->
-            <!--            <div class="modal-dialog">-->
+                     <!--The popup dialog to create a team. -->
+                     <!--Modal -->
+                    <div class="modal fade" id="add-member-modal" role="dialog">
+                        <div class="modal-dialog">
                         
-                          <!-- Modal content-->
-            <!--              <div class="modal-content">-->
-            <!--                <div class="modal-header" style="padding:35px 50px;">-->
-            <!--                    <button type="button" class="close" data-dismiss="modal">&times;</button>-->
-            <!--                    <h4>Add a member</h4>-->
-            <!--                </div>-->
-            <!--                <div class="modal-body" style="padding:40px 50px;">-->
-            <!--                    <form role="form">-->
-                                    <!--<div class="form-group">-->
-                                    <!--    <label>Team Leader</label>-->
-                                    <!--    <input type="text" disabled="" placeholder="{{request.user.username}}" class="form-control"  id="team-leader">-->
-                                    <!--</div>-->
-            <!--                        <div class="form-group">-->
-            <!--                            <label>email</label>-->
-            <!--                            <input type="text" class="form-control" id="team-name">-->
-            <!--                        </div>-->
-            <!--                    </form>-->
-            <!--                </div>-->
-            <!--                <div class="modal-footer">-->
-            <!--                    <button class="btn btn-primary pull-left" type="submit" id="team-submit-button" value={{request.user.id}}>Add</button>-->
-            <!--                    <button class="btn btn-white pull-right" type="cancel" id="team-cancel-button">Cancel</button>-->
-            <!--                </div>-->
-            <!--              </div>-->
+                           <!--Modal content-->
+                          <div class="modal-content">
+                            <div class="modal-header" style="padding:35px 50px;">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4>Invite Member</h4>
+                            </div>
+                            <div class="modal-body" style="padding:40px 50px;">
+                                <form role="form">
+                                    <div class="form-group">
+                                        <select data-placeholder="Please enter an email or a username..." class="chosen-select" multiple style="width:350px;" tabindex="4", id="add-select-member">
+                                            <option value="-1"></option>
+                                            {% for member in not_members %}
+                                                <option value="{{member.id}}">{{member.username}} ({{member.email}})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-primary pull-left" type="submit" id="team-submit-button" value={{request.user.id}}>Add</button>
+                                <button class="btn btn-white pull-right" type="cancel" id="team-cancel-button">Cancel</button>
+                            </div>
+                          </div>
                           
-            <!--            </div>-->
-            <!--          </div> -->
-            <!--    </div>-->
-            <!--</div>-->
+                        </div>
+                      </div> 
+                </div>
+            </div>
             {% endif %}
 
         </div>
@@ -176,79 +174,39 @@
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
 
-	<script>
-		function deleteItem(id) {
-			if(confirm("Are you sure to Delete?")){
-		        $.ajax({
-		            url:'{% url "team_delete" %}',
-		            data:{id: id},
-                    type: "GET",
-		            success:function(msg){
-		            	$("#team_id_"+id).remove();
-		            	
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Delete Operation");
-			}
-		}
-	</script>
-
     <!-- Page-Level Scripts -->
     <script>
         $(document).ready(function() {
             $('.footable').footable();
+            
+            var config = {
+                '.chosen-select'           : {},
+                '.chosen-select-deselect'  : { allow_single_deselect: true },
+                '.chosen-select-no-single' : { disable_search_threshold: 10 },
+                '.chosen-select-no-results': { no_results_text: 'Oops, nothing found!' },
+                '.chosen-select-rtl'       : { rtl: true },
+                '.chosen-select-width'     : { width: '95%' }
+            }
+            for (var selector in config) {
+                $(selector).chosen(config[selector]);
+            }
         });
     </script>
     
     <script>
-        $("#team-add-button").click(function() {
-            $("#teamModal").modal();
+		function delete_member(id) {
+		}
+	</script>
+    
+    <script>
+        $("#member-add-button").click(function() {
+            $("#add-member-modal").modal();
         });
         
-        $("#team-submit-button").click(function() {
-            var team_name = document.getElementById("team-name").value;
-            //var team_leader_id = $(this).attr('value');
+        $("#member-submit-button").click(function() {
             
-//             if(!confirm('Create a new team with the name ' + team_name + '?')){
-// 		        return false;
-// 			}
-            
-            $.ajax({
-                url: '{% url "team_create" %}',
-                type: "POST",
-                data: JSON.stringify({ 
-                    name: team_name,  
-                    //leader_id: team_leader_id, 
-                }),
-                success: function(data) {
-                    console.log(data);
-                    if (data.error_code == 0) {
-                        alert("SUCCESS");
-                        ret = true;
-                    } else {
-                        alert("Oops! We have encountered an error " + data.error_msg + "!");
-                        ret = false;
-                    }
-                    
-                    var team_name_ele = document.getElementById("team-name");
-                    team_name_ele.value = '';
-                    $('#teamModal').modal('hide');
-                    window.location.reload();
-                },
-            });
-            return ret;
         });
         
-        // $("#team-cancel-button").click(function() {
-        //     var team_name_ele = document.getElementById("team-name");
-        //     var team_leader_id_ele = document.getElementById("team-leader");
-        //     team_name_ele.value = '';
-        //     team_leader_id_ele.value = '';
-        // });
     </script>
 
 </body>
