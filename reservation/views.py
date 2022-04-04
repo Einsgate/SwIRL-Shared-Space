@@ -223,3 +223,63 @@ def team_create(request):
             "error_msg": str(e),
             # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
         })
+
+@csrf_exempt
+def training_view(request):
+    if request.method == 'GET':
+        if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
+            training = Training.list_all()
+            training_list_title = 'Training List'
+        else:
+            training = Training.list_all(request.user.id)
+            training_list_title = 'My Training'
+        return render(request, "training_list.html", {
+            "training": training,
+            "training_list_title": training_list_title,
+        })
+
+@csrf_exempt
+def training_delete(request):
+    if request.method == 'GET':
+        params = request.GET
+        
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            })
+    
+        Training.delete(params['id'])
+        
+        return JsonResponse({
+            "error_code": 0,
+        })
+
+@csrf_exempt 
+def training_create(request):
+    try:
+        if request.method == 'POST':
+            params = json.loads(request.body)
+
+            # Check required fields
+            if 'name' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+                })
+                
+            # Create team
+            training = Training(name = params['name'])
+            training.save()
+            return JsonResponse({
+                "error_code": 0, 
+                "team_id": team.id, 
+                "team_name": team.name
+            })
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+            # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
+        })

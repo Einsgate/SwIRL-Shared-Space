@@ -104,9 +104,22 @@ class Training(models.Model):
     end_time = models.DateTimeField()
     zone_id = models.IntegerField()
     
+    @staticmethod
+    def list_all(user_id = 0):
+        if user_id == 0:
+            return Training.objects.all()
+        else:
+            return Training.objects.filter(user_id = user_id)
+    
+    @staticmethod
+    def delete(id = 0):
+        Training.objects.filter(id = id).delete()
+
+# this is for change the training results like team details    
 class TrainingDetail(models.Model):
     training_id = models.IntegerField()
-    user_id = models.IntegerField()
+    # user_id = models.IntegerField()
+    user_id = models.ForeignKey('User', on_delete = models.CASCADE)
     training_result = models.IntegerField()
     registration_time = models.DateTimeField()
     

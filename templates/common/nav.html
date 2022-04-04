@@ -62,7 +62,12 @@
                     <li>
                         <a href="#"><i class="fa fa-edit"></i> <span class="nav-label">Training</span><span class="fa arrow"></span></a>
                         <ul class="nav nav-second-level collapse">
-                            <li><a >Training List</a></li>
+                            <!--<li><a >Training List</a></li>-->
+                            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
+                            <li><a href='{% url "training_view" %}'>Training List</a></li>
+                            {% else %}
+                            <li><a href='{% url "team_view" %}'>My Training</a></li>
+                            {% endif %}
                             <li><a >Apply Training</a></li>
                         </ul>
                     </li>

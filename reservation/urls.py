@@ -23,4 +23,7 @@ urlpatterns = [
     path('team/view/<int:team_id>/update', views.team_details_update, name='team_details_update'), 
     path('team/delete', views.team_delete, name='team_delete'),
     path('team/create', views.team_create, name='team_create'), 
+    path('training/view', views.training_view, name='training_view'),
+    path('training/delete', views.training_delete, name='training_delete'),
+    path('training/create', views.training_create, name='training_create'),
 ]
