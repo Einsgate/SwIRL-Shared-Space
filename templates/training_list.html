@@ -12,6 +12,8 @@
     <link href="/static/css/animate.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
     <link href="/static/css/plugins/datapicker/datepicker3.css" rel="stylesheet">
+    <link href="/static/css/plugins/datapicker/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    
 </head>
 
 <body>
@@ -117,13 +119,13 @@
 			                           <div class="form-group" id="startTime">
 			                               <label class="font-normal">Start Time</label>
 			                               <div class="input-group date">
-			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='startDate' class="form-control" value="03/04/2020">
+			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='startDate' class="form-control" value="">
 			                               </div>
 			                           </div>
-			                           <div class="form-group" id="startTime">
+			                           <div class="form-group" id="endTime">
 			                               <label class="font-normal">End Time</label>
 			                               <div class="input-group date">
-			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='endDate' class="form-control" value="03/04/2020">
+			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='endDate' class="form-control" value="">
 			                               </div>
 			                           </div>
                                         <label>Zone</label>
@@ -158,7 +160,9 @@
     <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
 
     <!-- Data picker -->
-    <script src="/static/js/plugins/datapicker/bootstrap-datepicker.js"></script>
+    <!-- script src="/static/js/plugins/datapicker/bootstrap-datepicker.js"></script -->
+    <script src="/static/js/plugins/datapicker/bootstrap-datetimepicker.js"></script>
+    <script src="/static/js/plugins/datapicker/bootstrap-datetimepicker.ua.js" charset="UTF-8"></script>
 
     <!-- Custom and plugin javascript -->
     <script src="/static/js/inspinia.js"></script>
@@ -188,19 +192,24 @@
 	</script>
 
     <script>
-		$('#startTime .input-group.date').datepicker({
-		    todayBtn: "linked",
-		    keyboardNavigation: false,
-		    forceParse: false,
-		    calendarWeeks: true,
-		    autoclose: true
+		$('#startTime .input-group.date').datetimepicker({
+		    weekStart: 1,
+		    todayBtn:  1,
+			autoclose: 1,
+			todayHighlight: 1,
+			startView: 2,
+			forceParse: 0,
+		    showMeridian: 1
 		});
-		$('#endTime .input-group.date').datepicker({
-		    todayBtn: "linked",
-		    keyboardNavigation: false,
-		    forceParse: false,
-		    calendarWeeks: true,
-		    autoclose: true
+
+		$('#endTime .input-group.date').datetimepicker({
+		    weekStart: 1,
+		    todayBtn:  1,
+			autoclose: 1,
+			todayHighlight: 1,
+			startView: 2,
+			forceParse: 0,
+		    showMeridian: 1
 		});
 
     	$(document).ready(function() {
@@ -212,11 +221,12 @@
         });
 
         $("#training-submit-button").click(function() {
-            var trainingName = $("#trainingName");
-            var trainingDesc = $("#trainingDesc");
-            var startDate = $("#startDate");
-            var endDate = $("#endDate");
-            var zoneId = $("#zoneId");
+            var trainingName = $("#trainingName").val();
+            console.log(trainingName);
+            var trainingDesc = $("#trainingDesc").val();
+            var startDate = $("#startTime").find("input").val();
+            var endDate = $("#endTime").find("input").val();
+            var zoneId = $("#zoneId").val();
 			console.log("name=["+trainingName+"] desc=["+trainingDesc+"] start=["+startDate+"] end=["+endDate+"] zone=["+zoneId+"] ");
 //             if(!confirm('Create a new team with the name ' + team_name + '?')){
 // 		        return false;
