@@ -78,7 +78,7 @@ class User(AbstractUser):
         
     @staticmethod
     def list_not_members(team_id):
-        return User.objects.exclude(pk__in=TeamMember.get_team_members(team_id).values_list('user_id', flat=True))
+        return User.objects.exclude(role_id__in=[0, 1]).exclude(pk__in=TeamMember.get_team_members(team_id).values_list('user_id', flat=True))
         
     @staticmethod
     def query(user_id):
@@ -114,6 +114,10 @@ class TeamMember(models.Model):
     team_id = models.ForeignKey('Team', on_delete = models.CASCADE)
     user_id = models.ForeignKey('User', on_delete = models.CASCADE)
     join_time = models.DateTimeField(auto_now_add=True)
+    
+    @staticmethod
+    def query(member_id):
+        return TeamMember.objects.get(pk = member_id);
     
     @staticmethod
     def get_team_members(team_id):

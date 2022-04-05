@@ -93,15 +93,19 @@
 	                                <tr id="team_id_{{team.id}}">
 	                                    <td><a href="{% url 'team_view' %}/{{team.id}}">{{team.name}}</a></td>
 	                                    <td>{{team.num_teammembers}}</td>
-	                                    <td>{{team.leader_id}}</td>
+	                                    {% if team.leader_id == None %}
+	                                        <td value="-1"></td>
+	                                    {% else %}
+	                                        <td value="{{team.leader_id.id}}">{{team.leader_id.username}}</td>
+	                                    {% endif %}
 	                                    <td>{{team.creation_time}}</td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
 	                                            {% if request.user.role_id.id == 0 or  request.user.role_id.id == 1 %}
-	                                            <button class="btn-white btn btn-xs" type="button" onclick="edit_team({{team.id}})">Edit</button>
-	                                            {% include 'manage-team/edit_team_modal.html' %}
+	                                                <button class="btn-white btn btn-xs" type="button" onclick="edit_team({{team.id}})">Edit</button>
+    	                                            {% include 'manage-team/edit_team_modal.html' %}
 	                                            
-	                                            <button class="btn-white btn btn-xs" type="button" onclick="delete_team({{team.id}})">Delete</button>
+	                                                <button class="btn-white btn btn-xs" type="button" onclick="delete_team({{team.id}})">Delete</button>
 	                                            {% endif %}
 	                                        </div>
 	                                    </td>
@@ -166,6 +170,7 @@
             $('.chosen-select').chosen({
                 width: "100%", 
                 search_contains: true, 
+                allow_single_deselect: true,
             });
         });
     </script>
@@ -185,8 +190,6 @@
 		            }
 		        });
 		        return true;
-			}else{
-				alert("Cancel Delete Operation");
 			}
 		}
 
@@ -205,27 +208,27 @@
                     if (data.error_code == 0) {
                         // initial modal
                         $("#edit-team-name").val(data.team_name);
+                        $("#edit-select-leader").empty();
+                        $("#edit-select-leader").append('<option value="-1"></option>');
                         
-                        teammembers = data.members
+                        var teammembers = data.members;
+                        var leader_id = data.team_leader_id;
                         teammembers.forEach(member => {
-                            var optionExists = ($('#edit-select-leader option[value=' + member.at(0) + ']').length > 0);
-                            $("#edit-select-leader").append($('<option>', {
-                                value: member.at(0),
-                                text: member.at(1) + " (" + member.at(2) + ")", 
-                                selected: true, 
-                            }));
+                            if (member.at(0) == leader_id) {
+                                $("#edit-select-leader").append(`<option value=${member.at(0)} selected>${member.at(1)} (${member.at(2)}) </option>`); 
+                            } else {
+                                $("#edit-select-leader").append(`<option value=${member.at(0)}>${member.at(1)} (${member.at(2)}) </option>`); 
+                            }
                         });
                         $("#edit-select-leader").trigger("chosen:updated");
                         $("#edit-select-leader").chosen();
                         
                         // use the button to record team_id.
                         $("#edit-team-save-button").val(team_id);
-                        ret = true;
                     } else {
-                        alert("Oops! We have encountered an error " + data.error_msg + "!");
-                        ret = false;
+                        alert("Oops! We have encountered an error " + data.error_msg + "!");                    
                     }
-                },
+                }, 
             });
             $("#edit-team-modal").modal();
 	    }
@@ -237,6 +240,9 @@
             var team_name = $("#create-team-name").val();
             var team_leader_id = $("#create-team-leader").find(":selected").val();
             
+            if (team_leader_id.length == 0) team_leader_id = '-1';
+            
+            var ret = false;
             $.ajax({
                 url: '{% url "team_create" %}',
                 type: "POST",
@@ -245,7 +251,6 @@
                     leader_id: team_leader_id, 
                 }),
                 success: function(data) {
-                    console.log(data);
                     if (data.error_code == 0) {
                         alert("SUCCESS");
                         ret = true;
@@ -264,16 +269,13 @@
 
     $("#edit-team-save-button").click(function() {
             var team_id = $(this).val();
-            console.log('team_id = ' + team_id);
             var team_name = $("#edit-team-name").val();
             var team_leader_id = $("#edit-select-leader").val()
             
-            console.log(team_leader_id);
-            
             if (team_name == '') team_name = $("#team_id_" + team_id + " td:first-child a").text();
-            if (team_leader_id == '-1') team_leader_id =  $("#team_id_" + team_id + " td:nth-child(3)").val();
-            
+            if (team_leader_id == '-1') team_leader_id = $("#team_id_" + team_id + " td:nth-child(3)").attr("value");
 
+            var ret = false;
             $.ajax({
                 url: '{% url "team_view_update" %}',
                 type: "POST",
@@ -283,7 +285,6 @@
                     team_leader_id: team_leader_id, 
                 }),
                 success: function(data) {
-                    console.log(data);
                     if (data.error_code == 0) {
                         $("#team_id_" + team_id + " td:nth-child(1) a").text( team_name );
                         $("#team_id_" + team_id + " td:nth-child(3)").val( data.new_team_leader_id );
