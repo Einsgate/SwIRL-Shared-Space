@@ -38,4 +38,7 @@ urlpatterns = [
     path('training/view', views.training_view, name='training_view'),
     path('training/delete', views.training_delete, name='training_delete'),
     path('training/create', views.training_create, name='training_create'),
+    path('training/apply', views.training_apply, name='training_apply'),
+    path('training/apply/view', views.training_apply_view, name='training_apply_view'),
+    path('training/apply/delete', views.training_apply_delete, name='training_apply_delete'),
 ]

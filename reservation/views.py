@@ -411,30 +411,87 @@ def training_delete(request):
 def training_create(request):
     try:
         if request.method == 'POST':
-            params = json.loads(request.body)
-
             # Check required fields
-            if 'name' not in params:
-                return JsonResponse({
-                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
-                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
-                })
-                
-            # Create training
+            params = json.loads(request.body)
             print(params)
-            training = Training(name = params['name'], description= params['desc'], )
-            
+            if 'zone_id' not in params or 'name' not in params or 'start_time' not in params or 'end_time' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                });
+            training = Training(name = params['name'], start_time = parse_datetime(params['start_time']), end_time = parse_datetime(params['end_time']), zone_id = params['zone_id'])
             training.save()
             return JsonResponse({
-                "error_code": 0, 
-                #"team_id": team.id, 
-                #"team_name": team.name
+                "error_code": 0,
+                "training_id": training.id,
+                "training_name": training.name,
+                "training_description": training.description,
+                "training_instructor_id": training.instructor_id,
+                "training_start_time": training.start_time,
+                "training_end_time": training.end_time,
+                "training_zone_id": training.zone_id
             })
     except Exception as e:
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),
             # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
+        })
+
+@csrf_exempt
+def training_apply_view(request):
+    if request.method == 'GET':
+        if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
+            my_training = My_Training.list_all()
+            my_training_list_title = 'All Apply Training List'
+        else:
+            my_training = My_Training.list_all(request.user.id)
+            my_training_list_title = 'My Training Apply'
+        return render(request, "training_apply.html", {
+            "training": my_training,
+            "training_list_title": my_training_list_title,
+        })
+    
+@csrf_exempt
+def training_apply(request):
+    try:
+        if request.method == 'POST':
+            # Check required fields
+            params = json.loads(request.body)
+            print(params)
+            if 'zone_id' not in params or 'user_id' not in params or 'start_time' not in params or 'end_time' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                });
+            my_training = My_Training(name = params['name'], user_id = params['user_id'], start_time = parse_datetime(params['start_time']), end_time = parse_datetime(params['end_time']), zone_id = params['zone_id'])
+            my_training.save()
+            return JsonResponse({
+                "error_code": 0,
+            })
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+            # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
+        })
+
+@csrf_exempt
+def training_apply_delete(request):
+    if request.method == 'GET':
+        params = request.GET
+        
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            })
+
+        My_Training.delete(params['id'])
+
+        return JsonResponse({
+            "error_code": 0,
         })
 
 def team_detail(request, team_id):

@@ -142,6 +142,26 @@ class Training(models.Model):
     def delete(id = 0):
         Training.objects.filter(id = id).delete()
 
+class My_Training(models.Model):
+    #id = models.IntegerField(primary_key = True, blank=True)
+    name = models.CharField(max_length = 50)
+    description = models.CharField(max_length = 1000)
+    user_id = models.ForeignKey('User', on_delete = models.CASCADE)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    zone_id = models.IntegerField()
+    
+    @staticmethod
+    def list_all(user_id = 0):
+        if user_id == 0:
+            return My_Training.objects.all()
+        else:
+            return My_Training.objects.filter(user_id = user_id)
+    
+    @staticmethod
+    def delete(id = 0):
+        My_Training.objects.filter(id = id).delete()
+
 # this is for change the training results like team details    
 class TrainingDetail(models.Model):
     training_id = models.IntegerField()

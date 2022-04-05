@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Southwest Innovation Research Lab - {{ training_list_title }}</title>
+    <title>Southwest Innovation Research Lab - {{ my_training_list_title }}</title>
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
     <link href="/static/font-awesome/css/font-awesome.css" rel="stylesheet">
     <!-- FooTable -->
@@ -22,13 +22,13 @@
 
         <div class="row wrapper border-bottom white-bg page-heading">
             <div class="col-lg-10">
-                <h2>{{ training_list_title }}</h2>
+                <h2>{{ my_training_list_title }}</h2>
                 <ol class="breadcrumb">
                     <li>
                         <a href="/index.html">Home</a>
                     </li>
                     <li class="active">
-                        <strong>{{ training_list_title }}</strong>
+                        <strong>{{ my_training_list_title }}</strong>
                     </li>
                 </ol>
             </div>
@@ -53,19 +53,18 @@
 	                                    <th class="text-right">Action</th>
 	                                </tr>
                                 </thead>
-                                <tbody id="training_list">
-                                	{% for t in training %}  
+                                <tbody id="my_training_list">
+                                	{% for mt in my_training %}  
 	                                <tr id="instructor_id_{{t.id}}">
-	                                    <td><!-- a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a-->{{t.name}}</td>
-	                                    <td>{{t.description}}</td>
-	                                    <td>{{t.start_time}}</td>
-	                                    <td>{{t.end_time}}</td>
-	                                    <td>{{t.zone_id}}</td>
+	                                    <td><!-- a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a-->{{mt.name}}</td>
+	                                    <td>{{mt.description}}</td>
+	                                    <td>{{mt.start_time}}</td>
+	                                    <td>{{mt.end_time}}</td>
+	                                    <td>{{mt.zone_id}}</td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
-	                                            
 	                                            {% if request.user.role_id.id == 0 or  request.user.role_id.id == 1 %}
-	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
+	                                            <button id="deleteSubmit" onclick="deleteItem('{{mt.id}}')" class="btn-white btn btn-xs">Delete</button>
 	                                            {% endif %}
 	                                        </div>
 	                                    </td>
@@ -129,6 +128,8 @@
 			                           </div>
                                         <label>Zone</label>
                                         <input type="text" class="form-control" id="zoneId">
+                                        <label>User</label>
+                                        <input type="text" class="form-control" id="userId">
                                     </div>
                                 </form>
                             </div>
@@ -167,36 +168,16 @@
 
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-    
-    <script>
-		function apply(id) {
-			if(confirm("Are you sure to Apply?")){
-		        $.ajax({
-		            url:'{% url "training_apply" %}',
-		            data:JSON.stringify({id: id, user_id: user_id, start_time: start_time, end_time: end_time, zone_id: zone_id}),
-                    type: "POST",
-		            success:function(msg){
-		            	$(location).attr('href','{% url "training_view" %}');
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Apply Operation");
-			}
-		}
-	</script>
 
 	<script>
 		function deleteItem(id) {
 			if(confirm("Are you sure to Delete?")){
 		        $.ajax({
-		            url:'{% url "training_delete" %}',
+		            url:'{% url "training_apply_delete" %}',
 		            data:{id: id},
                     type: "GET",
 		            success:function(msg){
-		            	$(location).attr('href','{% url "training_view" %}');
+		            	$(location).attr('href','{% url "training_apply_view" %}');
 		            },
 		            error:function(xhr,textstatus,thrown){
 		            }
@@ -238,13 +219,14 @@
             var startDate = $("#startDate");
             var endDate = $("#endDate");
             var zoneId = $("#zoneId");
-			console.log("name=["+trainingName+"] desc=["+trainingDesc+"] start=["+startDate+"] end=["+endDate+"] zone=["+zoneId+"] ");
+            var userId = $("userId");
+			console.log("name=["+trainingName+"] desc=["+trainingDesc+"] start=["+startDate+"] end=["+endDate+"] zone=["+zoneId+"] user=["+userId+"] ");
 //             if(!confirm('Create a new team with the name ' + team_name + '?')){
 // 		        return false;
 // 			}
             
             $.ajax({
-                url: '{% url "training_create" %}',
+                url: '{% url "training_view_create" %}',
                 type: "POST",
                 data: JSON.stringify({ 
                     name: trainingName,
@@ -252,6 +234,7 @@
                     startDate: startDate,
                     endDate: endDate,
                     zoneId:zoneId,
+                    userId:userId
                     //leader_id: team_leader_id,
                 }),
                 success: function(data) {
@@ -279,8 +262,6 @@
         //     team_name_ele.value = '';
         //     team_leader_id_ele.value = '';
         // });
-        
-        // <button id="Apply" onclick="apply('{{t.id}, {request.user.user_id.id}, {t.start_time}, {t.end_time}, {t.zone_id}}')" class="btn-white btn btn-xs">Apply</button> // want to add line 66 to apply training in this website
     </script>
 
 </body>

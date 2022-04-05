@@ -66,9 +66,13 @@
                             {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
                             <li><a href='{% url "training_view" %}'>Training List</a></li>
                             {% else %}
-                            <li><a href='{% url "team_view" %}'>My Training</a></li>
+                            <li><a href='{% url "training_view" %}'>My Training</a></li>
                             {% endif %}
-                            <li><a >Apply Training</a></li>
+                            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
+                            <li><a href='{% url "training_apply_view" %}'>All Apply Training List</a></li>
+                            {% else %}
+                            <li><a href='{% url "training_apply_view" %}'>My Training Apply</a></li>
+                            {% endif %}
                         </ul>
                     </li>
                     <!--<li>-->
