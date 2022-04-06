@@ -131,6 +131,8 @@
 			                           </div>
                                         <label>Zone</label>
                                         <input type="text" class="form-control" id="zoneId">
+                                        <label>Instructor</label>
+                                        <input type="text" class="form-control" id="instructorId">
                                     </div>
                                 </form>
                             </div>
@@ -248,7 +250,8 @@
             var startDate = $("#startTime").find("input").val();
             var endDate = $("#endTime").find("input").val();
             var zoneId = $("#zoneId").val();
-			console.log("name=["+trainingName+"] desc=["+trainingDesc+"] start=["+startDate+"] end=["+endDate+"] zone=["+zoneId+"] ");
+            var instructorId = $("#instructorId").val();
+			console.log("name=["+trainingName+"] desc=["+trainingDesc+"] start=["+startDate+"] end=["+endDate+"] zone=["+zoneId+"] instructorId=["+instructorId+"]");
 //             if(!confirm('Create a new team with the name ' + team_name + '?')){
 // 		        return false;
 // 			}
@@ -262,6 +265,7 @@
                     startDate: startDate,
                     endDate: endDate,
                     zoneId:zoneId,
+                    instructorId:instructorId,
                     //leader_id: team_leader_id,
                 }),
                 success: function(data) {
@@ -290,7 +294,7 @@
         //     team_leader_id_ele.value = '';
         // });
         
-        // <button id="Apply" onclick="apply('{{t.id}, {request.user.user_id.id}, {t.start_time}, {t.end_time}, {t.zone_id}}')" class="btn-white btn btn-xs">Apply</button> // want to add line 66 to apply training in this website
+        
     </script>
 
 </body>

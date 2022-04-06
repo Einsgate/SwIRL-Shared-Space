@@ -129,8 +129,8 @@ class TeamMember(models.Model):
 class Training(models.Model):
     #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50)
-    description = models.CharField(max_length = 1000)
-    instructor_id = models.IntegerField()
+    description = models.CharField(max_length = 1000, default = '')
+    instructor_id = models.IntegerField(default = 0)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     zone_id = models.IntegerField()
@@ -149,7 +149,7 @@ class Training(models.Model):
 class My_Training(models.Model):
     #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50)
-    description = models.CharField(max_length = 1000)
+    description = models.CharField(max_length = 1000, default = '')
     user_id = models.ForeignKey('User', on_delete = models.CASCADE)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()

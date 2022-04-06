@@ -420,13 +420,13 @@ def training_create(request):
         if request.method == 'POST':
             # Check required fields
             params = json.loads(request.body)
-            print(params)
-            if 'zone_id' not in params or 'name' not in params or 'start_time' not in params or 'end_time' not in params:
+            print("L423: ", params)
+            if 'zoneId' not in params or 'name' not in params or 'startDate' not in params or 'endDate' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 });
-            training = Training(name = params['name'], start_time = parse_datetime(params['start_time']), end_time = parse_datetime(params['end_time']), zone_id = params['zone_id'])
+            training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id = params['zoneId'], instructor_id = params['instructorId'])
             training.save()
             return JsonResponse({
                 "error_code": 0,
