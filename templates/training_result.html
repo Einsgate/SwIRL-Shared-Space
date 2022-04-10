@@ -27,8 +27,11 @@
                     <li>
                         <a href="/index.html">Home</a>
                     </li>
+                    <li>
+                        {{ training_list_title }}
+                    </li>
                     <li class="active">
-                        <strong>{{ training_list_title }}</strong>
+                        <strong>{{ train.name }}</strong>
                     </li>
                 </ol>
             </div>
@@ -37,27 +40,6 @@
         </div>
 
         <div class="wrapper wrapper-content animated fadeInRight ecommerce">
-            <div class="ibox-content m-b-sm border-bottom">
-                <div class="row">
-	                <div class="col-lg-12">
-	                    <div class="ibox float-e-margins">
-	                        <div class="ibox-content">
-	                            <p>
-	                                Search By Training Name <span class="text-muted">(type 'name')</span>
-	                            </p>
-	                            <form id="training_search" action="{% url 'training_apply' %}">
-									<div class="input-group"><input type="text" name="keyWord" id="keyWord" value="{{key_word}}" placeholder="name..." class="typeahead_1 form-control">
-										<span class="input-group-btn">
-										<button type="submit" class="btn btn-primary">Go!</button>
-										</span>
-									</div>
-								</form>
-	                        </div>
-	                    </div>
-	                </div>
-                </div>
-            </div>
-
             <div class="row">
                 <div class="col-lg-12">
                     <div class="ibox">
@@ -66,24 +48,28 @@
                             <table class="footable table table-stripped toggle-arrow-tiny" data-page-size="15">
                                 <thead>
 	                                <tr>
-	                                    <th data-hide="phone">Training</th>
-	                                    <th data-hide="all">Description</th>
-	                                    <th data-hide="phone">Start Time</th>
-	                                    <th data-hide="phone">End Time</th>
-	                                    <th class="text-right">Action</th>
+	                                    <th data-hide="phone">Member Name</th>
+	                                    <th data-hide="phone">Email</th>
+	                                    <th data-hide="phone">Register Time</th>
+	                                    <th data-hide="phone">Status</th>
+	                                    <th data-hide="phone">Result</th>
 	                                </tr>
                                 </thead>
                                 <tbody id="training_list">
-                                	{% for t in training_list %}  
+                                	{% for t in training %}  
 	                                <tr id="instructor_id_{{t.id}}">
-	                                    <td><!-- a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a-->{{t.name}}</td>
-	                                    <td>{{t.description}}</td>
-	                                    <td>{{t.start_time}}</td>
-	                                    <td>{{t.end_time}}</td>
-	                                    <td class="text-right">
-	                                        <div class="btn-group">
-	                                            <button id="applySubmit" onclick="applyItem('{{t.id}}')" class="btn-white btn btn-xs">Apply</button>
-	                                        </div>
+	                                    <td>{{t.user_id.username}}</td>
+	                                    <td>{{t.user_id.email}}</td>
+	                                    <td>{{t.registration_time}}</td>
+	                                    <td><span class="label label-primary"> Finished </span></td>
+	                                    <td>
+				                        <div class="col-sm-10">
+					                        <select class="sel" name="t_result" id="trainResult_{{t.id}}" trainId="{{t.id}}">
+											  <option value="0" {% if t.training_result == 0 %} selected="selected" {% endif %}>Not Graded</option>
+											  <option value="1" {% if t.training_result == 1 %} selected="selected" {% endif %}>Fault</option>
+											  <option value="2" {% if t.training_result == 2 %} selected="selected" {% endif %}>Passed</option>
+											</select>
+				                        </div>
 	                                    </td>
 	                                </tr>
 									{% endfor %}
@@ -127,20 +113,18 @@
     <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
 
     <script>
-		$(document).ready(function(){
-			var tlist = '{{ training_name }}';
-			var names = tlist.split(",");
-			$('.typeahead_1').typeahead({
-		        source: names
-		    });
-		});
-
-	    function applyItem(id) {
-			if(confirm("Are you sure to Apply?")){
+	    $('.sel').change(function(){
+	        var sel = $(this);
+	        var tid = sel.attr("trainId");
+	        var status = sel.val();
+	    	if(confirm("Are you sure to Apply?")){
 		        $.ajax({
-		            url:'{% url "training_apply_create" %}',
-		            data:{training_id: id},
-		            type: "GET",
+		            url:'{% url "training_result_update" %}',
+	                data: JSON.stringify({ 
+	                    id: tid,
+	                    status: status
+	                }),
+		            type: "POST",
 		            success:function(msg){
 		            	//$(location).attr('href','{% url "training_apply" %}');
 		            	console.log(msg);
@@ -152,7 +136,8 @@
 			}else{
 				alert("Cancel Apply Operation");
 			}
-		}
+	    });
+
     </script>
 
 </body>

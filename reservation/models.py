@@ -2,6 +2,8 @@ from django.db import models
 from django.db.models import Q, Count
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser
 from .const import *
+from allauth.account.views import email
+from ctypes.test.test_pickling import name
 # Create your models here.
 
 class Reservation(models.Model):
@@ -75,7 +77,10 @@ class User(AbstractUser):
     @staticmethod
     def findUserById(id = 0):
         return User.objects.filter(id = id).first()
-        
+    @staticmethod
+    def findListByEmail(email):
+        return User.objects.filter(email = email)
+
     @staticmethod
     def list_not_members(team_id):
         return User.objects.exclude(role_id__in=[0, 1]).exclude(pk__in=TeamMember.get_team_members(team_id).values_list('user_id', flat=True))
@@ -118,7 +123,6 @@ class TeamMember(models.Model):
     @staticmethod
     def query(member_id):
         return TeamMember.objects.get(pk = member_id);
-    
     @staticmethod
     def get_team_members(team_id):
         return TeamMember.objects.filter(team_id = team_id)
@@ -133,47 +137,67 @@ class Training(models.Model):
     instructor_id = models.IntegerField(default = 0)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
+    #0: not start, 1: processing, 2: finished, 3: graded
+    training_status = models.IntegerField(default = 0)
     zone_id = models.IntegerField()
-    
+
     @staticmethod
     def list_all(user_id = 0):
         if user_id == 0:
             return Training.objects.all()
         else:
             return Training.objects.filter(user_id = user_id)
-    
+
+    @staticmethod
+    def findById(id):
+        return Training.objects.filter(id=id).first()
+
+    @staticmethod
+    def list_exception(oldIds):
+        return Training.objects.filter(training_status=0).filter(~Q(id__in=oldIds))
+
+    @staticmethod
+    def findListByName(name):
+        return Training.objects.filter(name = name, training_status=0)
+
     @staticmethod
     def delete(id = 0):
         Training.objects.filter(id = id).delete()
 
-class My_Training(models.Model):
-    #id = models.IntegerField(primary_key = True, blank=True)
-    name = models.CharField(max_length = 50)
-    description = models.CharField(max_length = 1000, default = '')
-    user_id = models.ForeignKey('User', on_delete = models.CASCADE)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    zone_id = models.IntegerField()
-    
-    @staticmethod
-    def list_all(user_id = 0):
-        if user_id == 0:
-            return My_Training.objects.all()
-        else:
-            return My_Training.objects.filter(user_id = user_id)
-    
-    @staticmethod
-    def delete(id = 0):
-        My_Training.objects.filter(id = id).delete()
-
 # this is for change the training results like team details    
 class TrainingDetail(models.Model):
-    training_id = models.IntegerField()
-    # user_id = models.IntegerField()
+    #id = models.IntegerField(primary_key = True, blank=True)
     user_id = models.ForeignKey('User', on_delete = models.CASCADE)
-    training_result = models.IntegerField()
-    registration_time = models.DateTimeField()
-    
+    training_id = models.ForeignKey('Training', on_delete = models.CASCADE)
+    registration_time = models.DateTimeField(auto_now_add=True)
+    #0: not start, 1: processing, 2: finished, 3: graded
+    training_status = models.IntegerField(default = 0)
+    #0: not graded, 1: failed, 2: passed
+    training_result = models.IntegerField(default = 0)
+
+    @staticmethod
+    def list_all(user_id = 0):
+        return TrainingDetail.objects.filter(user_id = user_id)
+
+    @staticmethod
+    def listByTrainingId(training_id):
+        return TrainingDetail.objects.filter(training_id = training_id)
+
+    @staticmethod
+    def findById(id):
+        return TrainingDetail.objects.filter(id = id).first()
+
+    @staticmethod
+    def list_exception(user_id = 0):
+        if user_id == 0:
+            return TrainingDetail.objects.all()
+        else:
+            return TrainingDetail.objects.filter(user_id = user_id)
+
+    @staticmethod
+    def delete(id = 0):
+        TrainingDetail.objects.filter(id = id).delete()
+
 class Zone(models.Model):
     #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50, default = "noname")

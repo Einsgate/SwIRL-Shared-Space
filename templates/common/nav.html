@@ -64,15 +64,10 @@
                         <ul class="nav nav-second-level collapse">
                             <!--<li><a >Training List</a></li>-->
                             {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
-                            <li><a href='{% url "training_view" %}'>Training List</a></li>
-                            {% else %}
-                            <li><a href='{% url "training_view" %}'>My Training</a></li>
+                            <li><a href='{% url "training_view" %}'>Training Management</a></li>
                             {% endif %}
-                            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
-                            <li><a href='{% url "training_apply_view" %}'>All Apply Training List</a></li>
-                            {% else %}
-                            <li><a href='{% url "training_apply_view" %}'>My Training Apply</a></li>
-                            {% endif %}
+                            <li><a href='{% url "training_my_training" %}'>My Training</a></li>
+                            <li><a href='{% url "training_apply" %}'>Training Apply</a></li>
                         </ul>
                     </li>
                     <!--<li>-->

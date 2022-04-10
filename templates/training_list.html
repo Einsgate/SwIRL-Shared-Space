@@ -13,7 +13,6 @@
     <link href="/static/css/style.css" rel="stylesheet">
     <link href="/static/css/plugins/datapicker/datepicker3.css" rel="stylesheet">
     <link href="/static/css/plugins/datapicker/bootstrap-datetimepicker.min.css" rel="stylesheet">
-    
 </head>
 
 <body>
@@ -58,14 +57,13 @@
                                 <tbody id="training_list">
                                 	{% for t in training %}  
 	                                <tr id="instructor_id_{{t.id}}">
-	                                    <td><!-- a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a-->{{t.name}}</td>
+	                                    <td><a href="trainingResult/{{t.id}}">{{t.name}}</a></td>
 	                                    <td>{{t.description}}</td>
 	                                    <td>{{t.start_time}}</td>
 	                                    <td>{{t.end_time}}</td>
 	                                    <td>{{t.zone_id}}</td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
-	                                            
 	                                            {% if request.user.role_id.id == 0 or  request.user.role_id.id == 1 %}
 	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
 	                                            {% endif %}
@@ -192,9 +190,7 @@
 				alert("Cancel Apply Operation");
 			}
 		}
-	</script>
 
-	<script>
 		function deleteItem(id) {
 			if(confirm("Are you sure to Delete?")){
 		        $.ajax({
@@ -212,9 +208,7 @@
 				alert("Cancel Delete Operation");
 			}
 		}
-	</script>
 
-    <script>
 		$('#startTime .input-group.date').datetimepicker({
 		    weekStart: 1,
 		    todayBtn:  1,
@@ -245,14 +239,13 @@
 
         $("#training-submit-button").click(function() {
             var trainingName = $("#trainingName").val();
-            console.log(trainingName);
             var trainingDesc = $("#trainingDesc").val();
             var startDate = $("#startTime").find("input").val();
             var endDate = $("#endTime").find("input").val();
             var zoneId = $("#zoneId").val();
             var instructorId = $("#instructorId").val();
-			console.log("name=["+trainingName+"] desc=["+trainingDesc+"] start=["+startDate+"] end=["+endDate+"] zone=["+zoneId+"] instructorId=["+instructorId+"]");
-//             if(!confirm('Create a new team with the name ' + team_name + '?')){
+
+//          if(!confirm('Create a new team with the name ' + team_name + '?')){
 // 		        return false;
 // 			}
             
@@ -269,7 +262,7 @@
                     //leader_id: team_leader_id,
                 }),
                 success: function(data) {
-                    console.log(data);
+
                     if (data.error_code == 0) {
                         alert("SUCCESS");
                         ret = true;

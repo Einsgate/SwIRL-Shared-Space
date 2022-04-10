@@ -37,27 +37,6 @@
         </div>
 
         <div class="wrapper wrapper-content animated fadeInRight ecommerce">
-            <div class="ibox-content m-b-sm border-bottom">
-                <div class="row">
-	                <div class="col-lg-12">
-	                    <div class="ibox float-e-margins">
-	                        <div class="ibox-content">
-	                            <p>
-	                                Search By Training Name <span class="text-muted">(type 'name')</span>
-	                            </p>
-	                            <form id="training_search" action="{% url 'training_apply' %}">
-									<div class="input-group"><input type="text" name="keyWord" id="keyWord" value="{{key_word}}" placeholder="name..." class="typeahead_1 form-control">
-										<span class="input-group-btn">
-										<button type="submit" class="btn btn-primary">Go!</button>
-										</span>
-									</div>
-								</form>
-	                        </div>
-	                    </div>
-	                </div>
-                </div>
-            </div>
-
             <div class="row">
                 <div class="col-lg-12">
                     <div class="ibox">
@@ -67,22 +46,44 @@
                                 <thead>
 	                                <tr>
 	                                    <th data-hide="phone">Training</th>
-	                                    <th data-hide="all">Description</th>
 	                                    <th data-hide="phone">Start Time</th>
 	                                    <th data-hide="phone">End Time</th>
+	                                    <th data-hide="phone">Register Time</th>
+	                                    <th data-hide="phone">Status</th>
+	                                    <th data-hide="phone">Result</th>
 	                                    <th class="text-right">Action</th>
 	                                </tr>
                                 </thead>
                                 <tbody id="training_list">
                                 	{% for t in training_list %}  
 	                                <tr id="instructor_id_{{t.id}}">
-	                                    <td><!-- a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a-->{{t.name}}</td>
-	                                    <td>{{t.description}}</td>
-	                                    <td>{{t.start_time}}</td>
-	                                    <td>{{t.end_time}}</td>
+	                                    <td><!-- a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a-->{{t.training_id.name}}</td>
+	                                    <td>{{t.training_id.start_time}}</td>
+	                                    <td>{{t.training_id.end_time}}</td>
+	                                    <td>{{t.registration_time}}</td>
+	                                    <td>
+	                                    {% if t.training_status == 2 %}
+	                                    	Finished
+	                                    {% elif t.training_status == 3 %}
+	                                    	Graded
+	                                   	{% else %}
+	                                   		Processing
+	                                    {% endif %}
+	                                    </td>
+	                                    <td>
+	                                    {% if t.training_result == 0 %}
+	                                    	<span class="label label-warning"> Not Graded </span>
+	                                    {% elif t.training_result == 1 %}
+	                                    	<span class="label label-danger"> Fault </span>
+	                                    {% elif t.training_result == 2 %}
+	                                        <span class="label label-primary"> Passed </span>
+                                        {% endif %}
+	                                    </td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
-	                                            <button id="applySubmit" onclick="applyItem('{{t.id}}')" class="btn-white btn btn-xs">Apply</button>
+	                                        	{% if t.training_status == 0 %}
+	                                            <button id="applySubmit" onclick="applyItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
+	                                            {% endif %}
 	                                        </div>
 	                                    </td>
 	                                </tr>
@@ -127,14 +128,6 @@
     <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
 
     <script>
-		$(document).ready(function(){
-			var tlist = '{{ training_name }}';
-			var names = tlist.split(",");
-			$('.typeahead_1').typeahead({
-		        source: names
-		    });
-		});
-
 	    function applyItem(id) {
 			if(confirm("Are you sure to Apply?")){
 		        $.ajax({

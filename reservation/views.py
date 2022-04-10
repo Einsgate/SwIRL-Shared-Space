@@ -11,6 +11,7 @@ from django.core import serializers
 from .models import *
 from .errors import *
 from .const import *
+from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 
 from django.core.mail import send_mail
@@ -71,6 +72,7 @@ def authority_detail(request, id):
         "userDetail": user,
         "team_list": team_list,
     })
+
 @login_required
 def authority_udpate(request):
     team_list = Team.list_all(0)
@@ -78,11 +80,16 @@ def authority_udpate(request):
         params = request.GET
     userId = params['userId']
     roleId = params['roleId']
-    #teamId = params['teamId']
+    teamId = params['teamId']
     user = User.findUserById(userId)
-    if roleId == '1' :
-        role = Role.findById(ROLE_STAFF)
+    role = Role.findById(int(roleId))
+
+    if roleId == '1' or  roleId == '3':
         user.role_id = role
+        user.save()
+
+    if roleId == '2':
+        print("update team leader~~~")
         user.save()
 
     return render(request, "authority_detail.html", {
@@ -92,19 +99,26 @@ def authority_udpate(request):
     
 @login_required
 def authority_user(request):
-    user_list = User.list_all(0)
+    all_user = User.list_all(0)
     team_list = Team.list_all(0)
+    if request.method == 'GET':
+        params = request.GET
 
+    key_word = "";
+    if 'keyWord' in params:
+        key_word = params['keyWord']
+        user_list = User.findListByEmail(key_word)
+    else:
+        user_list = all_user
     #send_mail('Test email', 'First Django email by QQ', '394887350@qq.com', ['hibernatehou@tamu.edu'], fail_silently=False)
 
-    email_list = []
+    email_list = ""
 
-    for r in user_list:
-        email_list.append({
-            "name": r.email,
-        })
+    for r in all_user:
+        email_list += r.email+","
 
     return render(request, "authority_user.html", {
+        "key_word": key_word,
         "user_list": user_list,
         "team_list": team_list,
         "email_list": email_list,
@@ -156,26 +170,23 @@ def reservation_create(request):
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_message": str(e),
         })
-        
-        
 
 def reservation_history(request):
     reservations = Reservation.list_all(0)
     return render(request, "reservation_history.html", {
        "reservations": reservations,
     })
-        
-        
+
 def reservation_list(request):
     if request.method == 'GET':
         params = request.GET
-        
+
         # Check required fields
         if 'user_id' not in params:
             reservations = Reservation.list_all()
         else:
             reservations = Reservation.list_all(params['user_id'])
-                
+
         ret = []
 
         for r in reservations:
@@ -215,7 +226,8 @@ def reservation_delete(request):
         return JsonResponse({
             "error_code": 0,
         })
-        
+
+@login_required
 def zone_list(request):
     if request.method == 'GET':
         zones = Zone.list_all()
@@ -234,9 +246,9 @@ def zone_list(request):
             "error_code": 0,
             "results": results,
         })
-        
-        
+
 # team view
+@login_required
 def team_view(request):
     if request.method == 'GET':
         if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
@@ -251,7 +263,7 @@ def team_view(request):
             "teams": teams,
             "team_list_title": team_list_title,
         })
-    
+
 # update the name and leader of a team
 @csrf_exempt
 def team_view_update(request):
@@ -272,7 +284,7 @@ def team_view_update(request):
                 "team_leader_id": team_leader_id, 
                 "members": teammembers_user_id, 
             });
-            
+
         if request.method == 'POST':
             params = json.loads(request.body)
             if 'team_id' not in params:
@@ -280,9 +292,9 @@ def team_view_update(request):
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 });
-                
+
             team = Team.query(params['team_id']);
-                
+
             # update the team name
             updated = False;
             if 'team_name' in params: 
@@ -290,9 +302,9 @@ def team_view_update(request):
                 if new_team_name != team.name:
                     updated = True
                     team.name = new_team_name
-                    
+
             print(params['team_leader_id'] == "-1", params['team_leader_id']);
-            
+
             new_team_leader_id = "-1"
             new_team_username = ""
             if 'team_leader_id' in params and params['team_leader_id'] != "-1":
@@ -303,7 +315,7 @@ def team_view_update(request):
                 if team.leader_id == None or new_team_leader_id != team.leader_id.id:
                     updated = True
                     team.leader_id = new_team_leader
-                    
+
             if updated:
                 team.save();
 
@@ -317,31 +329,29 @@ def team_view_update(request):
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),
         })
-    
+
 @csrf_exempt
 def team_delete(request):
     if request.method == 'GET':
         params = request.GET
-        
+
         # Check required fields
         if 'id' not in params:
             return JsonResponse({
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
-    
+
         Team.delete(params['id'])
-        
+
         return JsonResponse({
             "error_code": 0,
         })
-        
+
 @csrf_exempt 
 def team_create(request):
     try:
         if request.method == 'POST':
-            params = json.loads(request.body)
-
             # Check required fields
             params = json.loads(request.body)
             if 'name' not in params:
@@ -382,25 +392,53 @@ def team_create(request):
             # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
         })
 
-@csrf_exempt
+#Training
+@login_required
 def training_view(request):
     if request.method == 'GET':
         if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
             training = Training.list_all()
             training_list_title = 'Training List'
-        else:
-            training = Training.list_all(request.user.id)
-            training_list_title = 'My Training'
         return render(request, "training_list.html", {
             "training": training,
             "training_list_title": training_list_title,
+        })
+
+@login_required
+def training_result(request, id):
+    train = Training.findById(id)
+    training = TrainingDetail.listByTrainingId(id)
+
+    return render(request, "training_result.html", {
+        "train": train,
+        "training": training,
+        "training_list_title": "Training Result",
+    })
+
+@csrf_exempt
+def training_result_update(request):
+    if request.method == 'POST':
+        # Check required fields
+        params = json.loads(request.body)
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+            });
+        print(params)
+        training = TrainingDetail.findById(params['id'])
+        training.training_result = params['status']
+        training.save()
+
+        return JsonResponse({
+            "error_code": 0,
         })
 
 @csrf_exempt
 def training_delete(request):
     if request.method == 'GET':
         params = request.GET
-        
+
         # Check required fields
         if 'id' not in params:
             return JsonResponse({
@@ -420,7 +458,7 @@ def training_create(request):
         if request.method == 'POST':
             # Check required fields
             params = json.loads(request.body)
-            print("L423: ", params)
+
             if 'zoneId' not in params or 'name' not in params or 'startDate' not in params or 'endDate' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
@@ -446,36 +484,64 @@ def training_create(request):
         })
 
 @csrf_exempt
-def training_apply_view(request):
-    if request.method == 'GET':
-        if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
-            my_training = My_Training.list_all()
-            my_training_list_title = 'All Apply Training List'
-        else:
-            my_training = My_Training.list_all(request.user.id)
-            my_training_list_title = 'My Training Apply'
-        return render(request, "training_apply.html", {
-            "training": my_training,
-            "training_list_title": my_training_list_title,
-        })
-    
-@csrf_exempt
 def training_apply(request):
+    if request.method == 'GET':
+        params = request.GET
+    key_word = "";
+    my_training = TrainingDetail.list_all(request.user.id);
+    oldIds = []
+    for t in my_training:
+        oldIds.append(t.training_id.id)
+
+    if 'keyWord' in params:
+        key_word = params['keyWord']
+        training_list = Training.findListByName(key_word)
+    else:
+        training_list = Training.list_exception(oldIds);
+
+    my_training_list_title = 'Training Apply'
+    training_name = ""
+
+    for r in training_list:
+        training_name += r.name+","
+
+    return render(request, "training_apply.html", {
+        "key_word": key_word,
+        "training_list": training_list,
+        "training_name": training_name,
+        "training_list_title": my_training_list_title,
+    })
+
+@login_required
+def training_my_training(request):
+    training = TrainingDetail.list_all(request.user.id)
+    training_list_title = 'My Training List'
+    return render(request, "training_my_training.html", {
+        "training_list": training,
+        "training_list_title": training_list_title,
+    })
+
+@csrf_exempt
+def training_apply_create(request):
     try:
-        if request.method == 'POST':
+        if request.method == 'GET':
             # Check required fields
-            params = json.loads(request.body)
-            print(params)
-            if 'zone_id' not in params or 'user_id' not in params or 'start_time' not in params or 'end_time' not in params:
-                return JsonResponse({
-                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
-                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
-                });
-            my_training = My_Training(name = params['name'], user_id = params['user_id'], start_time = parse_datetime(params['start_time']), end_time = parse_datetime(params['end_time']), zone_id = params['zone_id'])
-            my_training.save()
+            params = request.GET
+
+        if 'training_id' not in params:
             return JsonResponse({
-                "error_code": 0,
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
             })
+
+        user = User.findUserById(request.user.id)
+        training = Training.findById(params['training_id'])
+        my_training = TrainingDetail(user_id = user, training_id = training)
+        my_training.save()
+
+        return JsonResponse({
+            "error_code": 0,
+        })
     except Exception as e:
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,
@@ -487,7 +553,7 @@ def training_apply(request):
 def training_apply_delete(request):
     if request.method == 'GET':
         params = request.GET
-        
+
         # Check required fields
         if 'id' not in params:
             return JsonResponse({
@@ -495,7 +561,7 @@ def training_apply_delete(request):
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
 
-        My_Training.delete(params['id'])
+        TrainingDetail.delete(params['id'])
 
         return JsonResponse({
             "error_code": 0,
@@ -517,7 +583,7 @@ def team_detail(request, team_id):
         "not_members": not_members, 
         "members": members
     })
-    
+
 @csrf_exempt    
 def team_detail_update(request, team_id):
     try:
@@ -538,28 +604,28 @@ def team_detail_update(request, team_id):
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),
         })
-        
+
 @csrf_exempt  
 def team_detail_delete(request, team_id): 
     if request.method == 'GET':
         params = request.GET
-        
+
         # Check required fields
         if 'id' not in params:
             return JsonResponse({
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
             })
-        
+
         teammember = TeamMember.query(params['id'])
         team = teammember.team_id
-    
+
         if team.leader_id == teammember.user_id: 
             team.leader_id = None
             team.save();
-        
+
         teammember.delete();
-        
+
         return JsonResponse({
             "error_code": 0,
         })
