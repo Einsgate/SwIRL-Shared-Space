@@ -3,7 +3,7 @@ from django.db.models import Q, Count
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser
 from .const import *
 from allauth.account.views import email
-from ctypes.test.test_pickling import name
+
 # Create your models here.
 
 class Reservation(models.Model):
