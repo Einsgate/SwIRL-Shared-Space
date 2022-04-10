@@ -247,7 +247,10 @@ def zone_list(request):
             "results": results,
         })
 
-# team view
+# Team view
+# Show the list of teams in page /team/view/
+# Fow admin or staff, show all teams.
+# For others, show the teams they are in.
 @login_required
 def team_view(request):
     if request.method == 'GET':
@@ -264,108 +267,44 @@ def team_view(request):
             "team_list_title": team_list_title,
         })
 
-# update the name and leader of a team
-@csrf_exempt
-def team_view_update(request):
-    try:
-        if request.method == 'GET':
-            team_id = request.GET.get('team_id')
-            team = Team.query(team_id)
-            teammembers = TeamMember.get_team_members(team_id)
-            team_name = team.name;
-            if team.leader_id == None:
-                team_leader_id = -1
-            else:
-                team_leader_id = team.leader_id.id
-            teammembers_user_id = [[teammember.user_id.id,  teammember.user_id.username, teammember.user_id.email] for teammember in teammembers]
-            return JsonResponse({
-                "error_code": 0, 
-                "team_name": team_name, 
-                "team_leader_id": team_leader_id, 
-                "members": teammembers_user_id, 
-            });
-
-        if request.method == 'POST':
-            params = json.loads(request.body)
-            if 'team_id' not in params:
-                return JsonResponse({
-                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
-                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
-                });
-
-            team = Team.query(params['team_id']);
-
-            # update the team name
-            updated = False;
-            if 'team_name' in params: 
-                new_team_name = params['team_name']
-                if new_team_name != team.name:
-                    updated = True
-                    team.name = new_team_name
-
-            print(params['team_leader_id'] == "-1", params['team_leader_id']);
-
-            new_team_leader_id = "-1"
-            new_team_username = ""
-            if 'team_leader_id' in params and params['team_leader_id'] != "-1":
-                new_team_leader_id = params['team_leader_id']
-                print(new_team_leader_id)
-                new_team_leader = User.query(new_team_leader_id)
-                new_team_username = new_team_leader.username
-                if team.leader_id == None or new_team_leader_id != team.leader_id.id:
-                    updated = True
-                    team.leader_id = new_team_leader
-
-            if updated:
-                team.save();
-
-            return JsonResponse({
-                "error_code": 0,
-                "new_team_leader_id": new_team_leader_id, 
-                "new_team_leader_username": new_team_username, 
-            });
-    except Exception as e:
-        return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_msg": str(e),
-        })
-
-@csrf_exempt
-def team_delete(request):
-    if request.method == 'GET':
-        params = request.GET
-
-        # Check required fields
-        if 'id' not in params:
-            return JsonResponse({
-                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
-                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
-            })
-
-        Team.delete(params['id'])
-
-        return JsonResponse({
-            "error_code": 0,
-        })
-
+# Create a new team in the list. (admin or staff)
 @csrf_exempt 
-def team_create(request):
+def team_view_create(request):
     try:
         if request.method == 'POST':
+            # Check the authority
+            if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
+                return JsonResponse({
+                    "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
+                    "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
+                })
+                
             # Check required fields
             params = json.loads(request.body)
-            if 'name' not in params:
+            if 'name' not in params or 'leader_id' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 });
                 
+            # Check team name not empty
             new_team_name = params['name']
+            if len(new_team_name) == 0:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_TEAM_NAME_CODE, 
+                    "error_msg": ERR_MISSING_TEAM_NAME_MSG, 
+                });
+                
+            new_team_leader_id = params['leader_id']
+            if len(new_team_leader_id) == 0:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_TEAM_LEADER_CODE, 
+                    "error_msg": ERR_MISSING_TEAM_LEADER_MSG, 
+                });
             
             # Create a team
-            if 'leader_id' in params and params['leader_id'] != '-1':
-                print(params)
-                new_team_leader = User.query(params['leader_id'])
+            if new_team_leader_id != '-1':
+                new_team_leader = User.query(new_team_leader_id)
                 team = Team(name = new_team_name, leader_id = new_team_leader)
                 team.save()
                 
@@ -389,7 +328,201 @@ def team_create(request):
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),
-            # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
+        })
+        
+# Delete a team from the list. (admin or staff)
+@csrf_exempt
+def team_view_delete(request):
+    if request.method == 'GET':
+        params = request.GET
+        # Check the authority
+        if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
+            return JsonResponse({
+                "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
+                "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
+            })
+            
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            })
+
+        Team.delete(params['id'])
+
+        return JsonResponse({
+            "error_code": 0,
+        })        
+
+# update the name and leader of a team
+@csrf_exempt
+def team_view_update(request):
+    try:
+        if request.method == 'GET':
+            # Check the authority
+            if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
+                return JsonResponse({
+                    "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
+                    "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
+                })
+                
+            team_id = request.GET.get('team_id')
+            team = Team.query(team_id)
+            teammembers = TeamMember.get_team_members(team_id)
+            team_name = team.name;
+            if team.leader_id == None:
+                team_leader_id = -1
+            else:
+                team_leader_id = team.leader_id.id
+            teammembers_user_id = [[teammember.user_id.id,  teammember.user_id.username, teammember.user_id.email] for teammember in teammembers]
+            return JsonResponse({
+                "error_code": 0, 
+                "team_name": team_name, 
+                "team_leader_id": team_leader_id, 
+                "members": teammembers_user_id, 
+            });
+
+        if request.method == 'POST':
+            if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
+                return JsonResponse({
+                    "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
+                    "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
+                })
+                
+            params = json.loads(request.body)
+            if 'team_id' not in params or 'team_name' not in params or 'team_leader_id' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                });
+
+            team = Team.query(params['team_id']);
+            updated = False; 
+            
+            # update the team name
+            new_team_name = params['team_name']
+            if len(new_team_name) == 0:
+                new_team_name = team.name
+            elif new_team_name != team.name:
+                updated = True
+                team.name = new_team_name
+
+            # update the leader
+            new_team_leader_id = params['team_leader_id']
+            if len(new_team_leader_id) == 0:
+                new_team_leader_id = team.leader_id.id
+            elif new_team_leader_id != "-1":
+                new_team_leader = User.query(new_team_leader_id)
+                new_team_username = new_team_leader.username
+                if team.leader_id == None or new_team_leader_id != team.leader_id.id:
+                    updated = True
+                    team.leader_id = new_team_leader
+
+            # update the database only if some field has been changed
+            if updated:
+                team.save();
+
+            return JsonResponse({
+                "error_code": 0,
+                "new_team_leader_id": new_team_leader_id, 
+                "new_team_leader_username": new_team_username, 
+            });
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+        })
+
+# Team details
+# Show all team members.
+def team_detail(request, team_id):
+    members = TeamMember.get_team_members(team_id)
+    not_members = User.list_not_members(team_id)
+    team = Team.query(team_id)
+    team_name = team.name
+    if team.leader_id == None:
+        team_leader_id = -1
+    else:
+        team_leader_id = team.leader_id.id
+    return render(request, "manage-team/team_detail.html", {
+        "team_id": team_id, 
+        "team_name": team_name, 
+        "team_leader_id": team_leader_id, 
+        "not_members": not_members, 
+        "members": members
+    })
+
+# Invite new members in the current team. (admin or staff or team leader)
+@csrf_exempt    
+def team_detail_update(request, team_id):
+    try:
+        if request.method == 'POST':
+            # Check the authority
+            if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
+                team = Team.query(team_id)
+                if request.user.id != team.leader_id.id: 
+                    return JsonResponse({
+                        "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
+                        "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
+                    })
+                
+            params = json.loads(request.body)
+            if 'selected_members' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                })
+                
+            for user_id in params['selected_members']:
+                TeamMember.objects.get_or_create(user_id = User.query(user_id), team_id = Team.query(team_id))
+                
+            return JsonResponse({"error_code": 0,});
+    except Exception as e:
+        return JsonResponse({
+            "error_code": ERR_INTERNAL_ERROR_CODE,
+            "error_msg": str(e),
+        })
+
+@csrf_exempt  
+def team_detail_delete(request, team_id): 
+    if request.method == 'GET':
+        params = request.GET
+
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+            })
+
+        teammember = TeamMember.query(params['id'])
+        team = teammember.team_id
+        
+        # Check whether this teammember belongs to the team
+        if team.id != team_id:
+            return JsonResponse({
+                "error_code": ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE,
+                "error_msg": ERR_NOT_A_MEMBER_OF_THE_TEAM_MSG, 
+            })
+        
+        # Check the authority
+        if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
+            # The team leader can't delete the leader of the team (which is himself or herself).
+            if team.leader_id == teammember.user_id or request.user.id != team.leader_id.id: 
+                return JsonResponse({
+                    "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
+                    "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
+                })
+
+        if team.leader_id == teammember.user_id: 
+            team.leader_id = None
+            team.save();
+
+        teammember.delete();
+
+        return JsonResponse({
+            "error_code": 0,
         })
 
 #Training
@@ -566,67 +699,3 @@ def training_apply_delete(request):
         return JsonResponse({
             "error_code": 0,
         })
-
-def team_detail(request, team_id):
-    members = TeamMember.get_team_members(team_id)
-    not_members = User.list_not_members(team_id)
-    team = Team.query(team_id)
-    team_name = team.name
-    if team.leader_id == None:
-        team_leader_id = -1
-    else:
-        team_leader_id = team.leader_id.id
-    return render(request, "manage-team/team_detail.html", {
-        "team_id": team_id, 
-        "team_name": team_name, 
-        "team_leader_id": team_leader_id, 
-        "not_members": not_members, 
-        "members": members
-    })
-
-@csrf_exempt    
-def team_detail_update(request, team_id):
-    try:
-        if request.method == 'POST':
-            params = json.loads(request.body)
-            if 'selected_members' not in params:
-                return JsonResponse({
-                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
-                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
-                })
-                
-            for user_id in params['selected_members']:
-                TeamMember.objects.get_or_create(user_id = User.query(user_id), team_id = Team.query(team_id))
-                
-            return JsonResponse({"error_code": 0,});
-    except Exception as e:
-        return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_msg": str(e),
-        })
-
-@csrf_exempt  
-def team_detail_delete(request, team_id): 
-    if request.method == 'GET':
-        params = request.GET
-
-        # Check required fields
-        if 'id' not in params:
-            return JsonResponse({
-                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
-                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
-            })
-
-        teammember = TeamMember.query(params['id'])
-        team = teammember.team_id
-
-        if team.leader_id == teammember.user_id: 
-            team.leader_id = None
-            team.save();
-
-        teammember.delete();
-
-        return JsonResponse({
-            "error_code": 0,
-        })
-

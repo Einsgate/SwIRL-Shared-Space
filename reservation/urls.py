@@ -27,14 +27,17 @@ urlpatterns = [
     path('reservation/delete', views.reservation_delete, name='reservation_delete'),
     path('zone/list', views.zone_list, name='zone_list'),
 
-    # team
+    # team list
     path('team/view', views.team_view, name='team_view'), 
     path('team/view/update', views.team_view_update, name='team_view_update'), 
+    path('team/view/delete', views.team_view_delete, name='team_view_delete'),
+    path('team/view/create', views.team_view_create, name='team_view_create'),
+    
+    # details of a team
     path('team/view/<int:team_id>/', views.team_detail, name='team_detail'), 
     path('team/view/<int:team_id>/delete', views.team_detail_delete, name='team_detail_delete'), 
     path('team/view/<int:team_id>/update', views.team_detail_update, name='team_detail_update'), 
-    path('team/delete', views.team_delete, name='team_delete'),
-    path('team/create', views.team_create, name='team_create'),
+    
     path('training/view', views.training_view, name='training_view'),
     re_path('training/trainingResult/(\d+)/', views.training_result, name='training_result'),
     path('training/resultUpdate', views.training_result_update, name='training_result_update'),

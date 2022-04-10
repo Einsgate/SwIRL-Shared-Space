@@ -11,7 +11,7 @@
             <form role="form">
                 <div class="form-group">
                     <label>Team name</label>
-                    <input type="text" class="form-control" id="create-team-name">
+                    <input type="text" class="form-control" id="create-team-name" required>
                 </div>
                 <div class="form-group", id="create-team-leader">
                     <label for="select">
@@ -19,7 +19,7 @@
                     </label>
                     <div>
                         <select data-placeholder="Please enter the username or email..." class="chosen-select" tabindex="2" style="width:350px;">
-                            <option value=""></option>
+                            <option />
                             {% for user in users %}
                                 <option value={{user.id}}>{{user.username}} ({{user.email}})</option>
                             {% endfor %}

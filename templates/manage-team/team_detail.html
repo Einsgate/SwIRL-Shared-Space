@@ -222,7 +222,7 @@
 		    if(confirm("Are you sure to Delete?")){
 		        
 		        $.ajax({
-		            url:"{% url 'team_view'%}/{{team_id}}/delete", 
+		            url:"{% url 'team_detail_delete' team_id%}", 
 		            data:{id: id},
                     type: "GET",
 		            success:function(msg){
@@ -247,7 +247,7 @@
             
             var ret = false;
             $.ajax({
-                url:"{% url 'team_view'%}/{{team_id}}/update", 
+                url:"{% url 'team_detail_update' team_id %}", 
                 type: "POST",
                 data: JSON.stringify({ 
                     selected_members: selected_members,

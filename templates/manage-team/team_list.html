@@ -91,12 +91,12 @@
                                 <tbody id="team_list">
                                 	{% for team in teams %}  
 	                                <tr id="team_id_{{team.id}}">
-	                                    <td><a href="{% url 'team_view' %}/{{team.id}}">{{team.name}}</a></td>
+	                                    <td><a href="{% url 'team_detail' team.id %}">{{team.name}}</a></td>
 	                                    <td>{{team.num_teammembers}}</td>
 	                                    {% if team.leader_id == None %}
-	                                        <td value="-1"></td>
+	                                        <td></td>
 	                                    {% else %}
-	                                        <td value="{{team.leader_id.id}}">{{team.leader_id.username}}</td>
+	                                        <td id="team_leader_{{team.leader_id.id}}">{{team.leader_id.username}}</td>
 	                                    {% endif %}
 	                                    <td>{{team.creation_time}}</td>
 	                                    <td class="text-right">
@@ -179,7 +179,7 @@
         function delete_team(id) {
 			if(confirm("Are you sure to Delete?")){
 		        $.ajax({
-		            url:'{% url "team_delete" %}',
+		            url:'{% url "team_view_delete" %}',
 		            data:{id: id},
                     type: "GET",
 		            success:function(msg){
@@ -209,7 +209,6 @@
                         // initial modal
                         $("#edit-team-name").val(data.team_name);
                         $("#edit-select-leader").empty();
-                        $("#edit-select-leader").append('<option value="-1"></option>');
                         
                         var teammembers = data.members;
                         var leader_id = data.team_leader_id;
@@ -221,7 +220,6 @@
                             }
                         });
                         $("#edit-select-leader").trigger("chosen:updated");
-                        $("#edit-select-leader").chosen();
                         
                         // use the button to record team_id.
                         $("#edit-team-save-button").val(team_id);
@@ -238,13 +236,11 @@
     <script>
     $("#create-team-add-button").click(function() {
             var team_name = $("#create-team-name").val();
-            var team_leader_id = $("#create-team-leader").find(":selected").val();
-            
-            if (team_leader_id.length == 0) team_leader_id = '-1';
+            var team_leader_id = $("#create-team-leader").find(":selected").val() ?? '-1';
             
             var ret = false;
             $.ajax({
-                url: '{% url "team_create" %}',
+                url: '{% url "team_view_create" %}',
                 type: "POST",
                 data: JSON.stringify({ 
                     name: team_name,  
@@ -272,8 +268,8 @@
             var team_name = $("#edit-team-name").val();
             var team_leader_id = $("#edit-select-leader").val()
             
-            if (team_name == '') team_name = $("#team_id_" + team_id + " td:first-child a").text();
-            if (team_leader_id == '-1') team_leader_id = $("#team_id_" + team_id + " td:nth-child(3)").attr("value");
+            if (team_name == null) team_name = $("#team_id_" + team_id + " td:first-child a").text();
+            if (team_leader_id == null) team_leader_id = $("#team_id_" + team_id + " td:nth-child(3)").attr('id') ?? '-1';
 
             var ret = false;
             $.ajax({
