@@ -292,8 +292,7 @@ class TeamTestCase(TestCase):
         self.assertEqual(Team.list_all().count(), self.n_teams - 1)
         
         # Delete a random existing id
-        x = random.randint(1, self.n_teams)
-        tid = self.test_teams[x].id
+        tid = self.test_teams[1].id
         team = Team.objects.filter(pk = tid)
         self.assertTrue(team.exists())
         
