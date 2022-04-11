@@ -23,6 +23,9 @@ ERR_MISSING_TEAM_NAME_MSG = "Missing the team name."
 ERR_MISSING_TEAM_LEADER_CODE = 3003
 ERR_MISSING_TEAM_LEADER_MSG = "Missing the team leader."
 
+ERR_ADMIN_STAFF_TEAM_LEADER_CODE = 3004
+ERR_ADMIN_STAFF_TEAM_LEADER_MSG = "The leader can't be an admin or a staff."
+
 # Team detail errors
 ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE = 4001
 ERR_NOT_A_MEMBER_OF_THE_TEAM_MSG = "Delete a member not in the team."

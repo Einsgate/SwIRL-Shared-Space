@@ -305,6 +305,12 @@ def team_view_create(request):
             # Create a team
             if new_team_leader_id != '-1':
                 new_team_leader = User.query(new_team_leader_id)
+                if new_team_leader.role_id.id in (ROLE_ADMIN, ROLE_STAFF):
+                    return JsonResponse({
+                        "error_code": ERR_ADMIN_STAFF_TEAM_LEADER_CODE, 
+                        "error_msg": ERR_ADMIN_STAFF_TEAM_LEADER_MSG, 
+                    });
+                
                 team = Team(name = new_team_name, leader_id = new_team_leader)
                 team.save()
                 
@@ -414,6 +420,12 @@ def team_view_update(request):
                 new_team_leader_id = team.leader_id.id
             elif new_team_leader_id != "-1":
                 new_team_leader = User.query(new_team_leader_id)
+                if new_team_leader.role_id.id in (ROLE_ADMIN, ROLE_STAFF):
+                    return JsonResponse({
+                        "error_code": ERR_ADMIN_STAFF_TEAM_LEADER_CODE, 
+                        "error_msg": ERR_ADMIN_STAFF_TEAM_LEADER_MSG, 
+                    });
+                
                 new_team_username = new_team_leader.username
                 if team.leader_id == None or new_team_leader_id != team.leader_id.id:
                     updated = True
