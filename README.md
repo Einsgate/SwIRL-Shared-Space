@@ -72,6 +72,8 @@ NOTE: To use google login, you need to send me your aws hostname, e.g., 629260b0
 
 
 ### Deploy on Heroku
+Login
+``` heroku login -i ```
 
 Reset database
 ``` heroku pg:reset ```
