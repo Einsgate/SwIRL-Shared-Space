@@ -80,7 +80,7 @@ def authority_udpate(request):
         params = request.GET
     userId = params['userId']
     roleId = params['roleId']
-    teamId = params['teamId']
+    #teamId = params['teamId']
     user = User.findUserById(userId)
     role = Role.findById(int(roleId))
 
