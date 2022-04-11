@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Southwest Innovation Research Lab - Reservation History</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <!-- FooTable -->
+    <link href="/static/css/plugins/footable/footable.core.css" rel="stylesheet">
+    <link href="/static/css/animate.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    
+</head>
+
+<body>
+    <div id="wrapper">
+		{% include 'common/nav.html' %}
+        <div id="page-wrapper" class="gray-bg">
+        {% include 'common/logout.html' %}
+
+        <div class="row wrapper border-bottom white-bg page-heading">
+            <div class="col-lg-10">
+                <h2>{{ training_list_title }}</h2>
+                <ol class="breadcrumb">
+                    <li>
+                        <a href="/index.html">Home</a>
+                    </li>
+                    <li>
+                        {{ training_list_title }}
+                    </li>
+                    <li class="active">
+                        <strong>{{ train.name }}</strong>
+                    </li>
+                </ol>
+            </div>
+            <div class="col-lg-2">
+            </div>
+        </div>
+
+        <div class="wrapper wrapper-content animated fadeInRight ecommerce">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="ibox">
+                        <div class="ibox-content">
+
+                            <table class="footable table table-stripped toggle-arrow-tiny" data-page-size="15">
+                                <thead>
+	                                <tr>
+	                                    <th data-hide="phone">Member Name</th>
+	                                    <th data-hide="phone">Email</th>
+	                                    <th data-hide="phone">Register Time</th>
+	                                    <th data-hide="phone">Status</th>
+	                                    <th data-hide="phone">Result</th>
+	                                </tr>
+                                </thead>
+                                <tbody id="training_list">
+                                	{% for t in training %}  
+	                                <tr id="instructor_id_{{t.id}}">
+	                                    <td>{{t.user_id.username}}</td>
+	                                    <td>{{t.user_id.email}}</td>
+	                                    <td>{{t.registration_time}}</td>
+	                                    <td><span class="label label-primary"> Finished </span></td>
+	                                    <td>
+				                        <div class="col-sm-10">
+					                        <select class="sel" name="t_result" id="trainResult_{{t.id}}" trainId="{{t.id}}">
+											  <option value="0" {% if t.training_result == 0 %} selected="selected" {% endif %}>Not Graded</option>
+											  <option value="1" {% if t.training_result == 1 %} selected="selected" {% endif %}>Fault</option>
+											  <option value="2" {% if t.training_result == 2 %} selected="selected" {% endif %}>Passed</option>
+											</select>
+				                        </div>
+	                                    </td>
+	                                </tr>
+									{% endfor %}
+								  </tbody>
+                                <tfoot>
+                                <tr>
+                                    <td colspan="9">
+                                        <ul class="pagination pull-right"></ul>
+                                    </td>
+                                </tr>
+                                </tfoot>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="footer">
+			{% include 'common/footer.html' %}
+        </div>
+
+        </div>
+        </div>
+
+    <!-- Mainly scripts -->
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+    <!-- Custom and plugin javascript -->
+    <script src="/static/js/inspinia.js"></script>
+    <script src="/static/js/plugins/pace/pace.min.js"></script>
+
+    <!-- FooTable -->
+    <script src="/static/js/plugins/footable/footable.all.min.js"></script>
+
+    <!-- Typehead -->
+    <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
+
+    <script>
+	    $('.sel').change(function(){
+	        var sel = $(this);
+	        var tid = sel.attr("trainId");
+	        var status = sel.val();
+	    	if(confirm("Are you sure to Apply?")){
+		        $.ajax({
+		            url:'{% url "training_result_update" %}',
+	                data: JSON.stringify({ 
+	                    id: tid,
+	                    status: status
+	                }),
+		            type: "POST",
+		            success:function(msg){
+		            	//$(location).attr('href','{% url "training_apply" %}');
+		            	console.log(msg);
+		            },
+		            error:function(xhr,textstatus,thrown){
+		            }
+		        });
+		        return true;
+			}else{
+				alert("Cancel Apply Operation");
+			}
+	    });
+
+    </script>
+
+</body>
+
+</html>

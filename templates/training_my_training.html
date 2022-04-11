@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Southwest Innovation Research Lab - Reservation History</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/font-awesome/css/font-awesome.css" rel="stylesheet">
+    <!-- FooTable -->
+    <link href="/static/css/plugins/footable/footable.core.css" rel="stylesheet">
+    <link href="/static/css/animate.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    
+</head>
+
+<body>
+    <div id="wrapper">
+		{% include 'common/nav.html' %}
+        <div id="page-wrapper" class="gray-bg">
+        {% include 'common/logout.html' %}
+
+        <div class="row wrapper border-bottom white-bg page-heading">
+            <div class="col-lg-10">
+                <h2>{{ training_list_title }}</h2>
+                <ol class="breadcrumb">
+                    <li>
+                        <a href="/index.html">Home</a>
+                    </li>
+                    <li class="active">
+                        <strong>{{ training_list_title }}</strong>
+                    </li>
+                </ol>
+            </div>
+            <div class="col-lg-2">
+            </div>
+        </div>
+
+        <div class="wrapper wrapper-content animated fadeInRight ecommerce">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="ibox">
+                        <div class="ibox-content">
+
+                            <table class="footable table table-stripped toggle-arrow-tiny" data-page-size="15">
+                                <thead>
+	                                <tr>
+	                                    <th data-hide="phone">Training</th>
+	                                    <th data-hide="phone">Start Time</th>
+	                                    <th data-hide="phone">End Time</th>
+	                                    <th data-hide="phone">Register Time</th>
+	                                    <th data-hide="phone">Status</th>
+	                                    <th data-hide="phone">Result</th>
+	                                    <th class="text-right">Action</th>
+	                                </tr>
+                                </thead>
+                                <tbody id="training_list">
+                                	{% for t in training_list %}  
+	                                <tr id="instructor_id_{{t.id}}">
+	                                    <td><!-- a href="{% url 'training_view' %}/{{t.id}}">{{t.name}}</a-->{{t.training_id.name}}</td>
+	                                    <td>{{t.training_id.start_time}}</td>
+	                                    <td>{{t.training_id.end_time}}</td>
+	                                    <td>{{t.registration_time}}</td>
+	                                    <td>
+	                                    {% if t.training_status == 2 %}
+	                                    	Finished
+	                                    {% elif t.training_status == 3 %}
+	                                    	Graded
+	                                   	{% else %}
+	                                   		Processing
+	                                    {% endif %}
+	                                    </td>
+	                                    <td>
+	                                    {% if t.training_result == 0 %}
+	                                    	<span class="label label-warning"> Not Graded </span>
+	                                    {% elif t.training_result == 1 %}
+	                                    	<span class="label label-danger"> Fault </span>
+	                                    {% elif t.training_result == 2 %}
+	                                        <span class="label label-primary"> Passed </span>
+                                        {% endif %}
+	                                    </td>
+	                                    <td class="text-right">
+	                                        <div class="btn-group">
+	                                        	{% if t.training_status == 0 %}
+	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
+	                                            {% endif %}
+	                                        </div>
+	                                    </td>
+	                                </tr>
+									{% endfor %}
+								  </tbody>
+                                <tfoot>
+                                <tr>
+                                    <td colspan="9">
+                                        <ul class="pagination pull-right"></ul>
+                                    </td>
+                                </tr>
+                                </tfoot>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="footer">
+			{% include 'common/footer.html' %}
+        </div>
+
+        </div>
+        </div>
+
+    <!-- Mainly scripts -->
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+    <!-- Custom and plugin javascript -->
+    <script src="/static/js/inspinia.js"></script>
+    <script src="/static/js/plugins/pace/pace.min.js"></script>
+
+    <!-- FooTable -->
+    <script src="/static/js/plugins/footable/footable.all.min.js"></script>
+
+    <!-- Typehead -->
+    <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
+
+    <script>
+	    function deleteItem(id) {
+			if(confirm("Are you sure to Delete ?")){
+		        $.ajax({
+		            url:'{% url "training_apply_delete" %}',
+		            data:{training_id: id},
+		            type: "GET",
+		            success:function(msg){
+		            	$(location).attr('href','{% url "training_my_training" %}');
+		            },
+		            error:function(xhr,textstatus,thrown){
+		            }
+		        });
+		        return true;
+			}else{
+				alert("Cancel Delete Operation");
+			}
+		}
+    </script>
+
+</body>
+
+</html>
