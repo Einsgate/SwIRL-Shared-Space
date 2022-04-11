@@ -263,7 +263,7 @@ def team_view(request):
             teams = Team.list_all(request.user.id)
             team_list_title = 'My Teams'
         return render(request, "manage-team/team_list.html", {
-            #"users": users, 
+            "users": users, 
             "teams": teams,
             "team_list_title": team_list_title,
         })
@@ -278,9 +278,10 @@ def team_view_create(request):
                     "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
                     "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
                 })
-                
+            
             # Check required fields
             params = json.loads(request.body)
+            # print(params)
             if 'name' not in params or 'leader_id' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
@@ -331,7 +332,7 @@ def team_view_create(request):
                     # "team_name": team.name
                 })
     except Exception as e:
-        print(str(e))
+        # print(str(e))
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),

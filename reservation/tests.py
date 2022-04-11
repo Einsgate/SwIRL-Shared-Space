@@ -386,87 +386,93 @@ class TeamListViewTestCase(TestCase):
             self.assertEqual(resp.context['team_list_title'], 'My Teams')
             
     def test_admin_staff_create_team(self):
-        # for username in [self.test_users[0].username, self.test_users[1].username]:
-        #     self.c.login(username=username, password='password')
+        valid_team_name = 'abc'
+        valid_leader_id = str(self.test_users[2].id)
         
-        #     valid_team_name = 'abc'
-        #     valid_leader_id = self.test_users[2].id
-            
-        #     # Test the wrong field cases
-        #     payload_list = [
-        #         # Missing the leader_id
-        #         {'name': valid_team_name},       
-        #         # Missing the name
-        #         {'leader_id': valid_leader_id}, 
-        #         # The name is empty
-        #         {'name': '', 'leader_id': valid_leader_id}, 
-        #         # The leader is empty
-        #         {'name': valid_team_name, 'leader_id': ''}, 
-        #         # The leader_id is the admin
-        #         {'name': valid_team_name, 'leader_id': self.test_users[0].id}, 
-        #         # The leader_id is the staff
-        #         {'name': valid_team_name, 'leader_id': self.test_users[1].id}, 
-                
-        #     ]
-            
-        #     response_list = [
-        #         ERR_MISSING_REQUIRED_FIELD_CODE, 
-        #         ERR_MISSING_REQUIRED_FIELD_CODE, 
-        #         ERR_MISSING_TEAM_NAME_CODE, 
-        #         ERR_MISSING_TEAM_LEADER_CODE, 
-        #         ERR_ADMIN_STAFF_TEAM_LEADER_CODE, 
-        #         ERR_ADMIN_STAFF_TEAM_LEADER_CODE, 
-        #     ]
+        # Test the wrong field cases
+        post_body_list = [
+            # Missing the leader_id
+            {'name': valid_team_name},       
+            # Missing the name
+            {'leader_id': valid_leader_id}, 
+            # The name is empty
+            {'name': '', 'leader_id': valid_leader_id}, 
+            # The leader is empty
+            {'name': valid_team_name, 'leader_id': ''}, 
+            # The leader_id is the admin
+            {'name': valid_team_name, 'leader_id': str(self.test_users[0].id)}, 
+            # The leader_id is the staff
+            {'name': valid_team_name, 'leader_id': str(self.test_users[1].id)}, 
+        ]
         
-        #     for payload, response in zip(payload_list, response_list):
-        #         print(payload)
-        #         resp = self.c.post(reverse('team_view_create'), payload)
-        #         # self.assertEqual(resp.status_code, 200)
-        #         self.assertEqual(Team.objects.all().count(), self.n_teams)
-        #         self.assertEqual(TeamMember.objects.count(), self.n_team_members)
-                
-        #         data = json.loads(resp.content)
-        #         self.assertEqual(data['error_code'], response)
-                
-                
-                
-        #     new_team_name_1 = 'test_create_team_1'
-        #     team_no_leader = {'name': new_team_name_1, 'leader_id': '-1'}
-        #     resp = self.client.post(reverse('team_view_create'), team_no_leader)
-        #     # self.assertEqual(resp.status_code, 200)
-        #     data = json.loads(resp.content)
-        #     self.assertEqual(data['error_code'], 0)
-        #     self.assertTrue(Team.objects.all().count(), self.n_teams + 1)
-        #     self.assertTrue(TeamMember.objects.all().count(), self.n_team_members)
+        response_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_MISSING_TEAM_NAME_CODE, 
+            ERR_MISSING_TEAM_LEADER_CODE, 
+            ERR_ADMIN_STAFF_TEAM_LEADER_CODE, 
+            ERR_ADMIN_STAFF_TEAM_LEADER_CODE, 
+        ]
             
-        #     team = Team.objects.filter(name = new_team_name_1)
-        #     self.assertTrue(team.count(), 1)
-        #     self.assertTrue(team.first().leader_id, None)
+        for username in [self.test_users[0].username, self.test_users[1].username]:
+            self.c.login(username=username, password='password')
+        
+            for post_body, response in zip(post_body_list, response_list):
+                resp = self.c.post(reverse('team_view_create'), json.dumps(post_body), content_type="application/json")
+                self.assertEqual(resp.status_code, 200)
+                
+                data = json.loads(resp.content)
+                # print(data['error_msg'])
+                self.assertEqual(data['error_code'], response)
+                
+                self.assertEqual(Team.objects.all().count(), self.n_teams)
+                self.assertEqual(TeamMember.objects.count(), self.n_team_members)
+                
+        n_new_teams = 0
+        n_new_team_members = 0
+        for username in [self.test_users[0].username, self.test_users[1].username]:  
+            self.c.login(username=username, password='password')
             
-        #     new_team_name_2 = 'test_create_team_2'
-        #     team_with_leader = {'name': new_team_name_2, 'leader_id': valid_leader_id}
-        #     resp = self.client.post(reverse('team_view_create'), team_with_leader)
-        #     # self.assertEqual(resp.status_code, 200)
-        #     data = json.loads(resp.content)
-        #     self.assertEqual(data['error_code'], 0)
-        #     self.assertTrue(Team.objects.all().count(), self.n_teams + 2)
-        #     self.assertTrue(TeamMember.objects.all().count(), self.n_team_members + 1)
+            # Add a new team without no leaders
+            new_team_name_1 = 'test_create_team_1_%s' %username
+            team_no_leader = {'name': new_team_name_1, 'leader_id': '-1'}
+            resp = self.c.post(reverse('team_view_create'), json.dumps(team_no_leader), content_type="application/json")
+            n_new_teams += 1
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], 0)
+            self.assertEqual(Team.objects.all().count(), self.n_teams + n_new_teams)
+            self.assertEqual(TeamMember.objects.all().count(), self.n_team_members + n_new_team_members)
             
-        #     team = Team.objects.filter(name = new_team_name_2)
-        #     self.assertTrue(team.count(), 1)
-        #     self.assertTrue(team.first().leader_id.id, valid_leader_id)
-        pass
+            team = Team.objects.filter(name = new_team_name_1)
+            self.assertEqual(team.count(), 1)
+            self.assertEqual(team.first().leader_id, None)
+            
+            # Add a new team with a leader
+            new_team_name_2 = 'test_create_team_2_%s' %username
+            team_with_leader = {'name': new_team_name_2, 'leader_id': valid_leader_id}
+            resp = self.c.post(reverse('team_view_create'), json.dumps(team_with_leader), content_type="application/json")
+            n_new_teams += 1
+            n_new_team_members += 1
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], 0)
+            self.assertTrue(Team.objects.all().count(), self.n_teams + n_new_teams)
+            self.assertTrue(TeamMember.objects.all().count(), self.n_team_members + n_new_team_members)
+            
+            team = Team.objects.filter(name = new_team_name_2)
+            self.assertTrue(team.count(), 1)
+            self.assertTrue(team.first().leader_id.id, valid_leader_id)
         
     def test_member_create_team(self): 
-        # uid = 2
-        # self.c.login(username=self.test_users[uid].username, password='password')
-        # resp = self.c.post(reverse('team_view_create'), {'name': 'abc', 'leader_id': self.test_users[uid].id})
-        # # self.assertEqual(resp.status_code, 200)
-        # data = json.loads(resp.content)
-        # self.assertEqual(data['error_code'], ERR_LACK_OF_AUTHORITY_CODE)
-        # self.assertEqual(Team.objects.all().count(), self.n_teams)
-        # self.assertEqual(TeamMember.objects.count(), self.n_team_members)
-        pass
+        uid = 2
+        self.c.login(username=self.test_users[uid].username, password='password')
+        resp = self.c.post(reverse('team_view_create'), json.dumps({'name': 'abc', 'leader_id': self.test_users[uid].id}), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], ERR_LACK_OF_AUTHORITY_CODE)
+        self.assertEqual(Team.objects.all().count(), self.n_teams)
+        self.assertEqual(TeamMember.objects.count(), self.n_team_members)
         
     def test_admin_staff_edit_team(self): 
         # team_index = 2
@@ -487,28 +493,27 @@ class TeamListViewTestCase(TestCase):
         pass
         
     def test_member_edit_team(self): 
-        # uid = 2
-        # tid = 0
-        # self.c.login(username=self.test_users[uid].username, password='password')
-        # resp = self.c.post(reverse('team_view_update'), {'team_id': self.test_teams[tid].id, 'team_name': 'abc', 'team_leader_id': self.test_users[uid].id})
-        # # self.assertEqual(resp.status_code, 200)
-        # data = json.loads(resp.content)
-        # self.assertEqual(data['error_code'], ERR_LACK_OF_AUTHORITY_CODE)
-        pass
-        
+        uid = 2
+        tid = 0
+        self.c.login(username=self.test_users[uid].username, password='password')
+        resp = self.c.post(reverse('team_view_update'), json.dumps({
+            'team_id': self.test_teams[tid].id, 'team_name': 'abc', 'team_leader_id': self.test_users[uid].id
+        }), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], ERR_LACK_OF_AUTHORITY_CODE)
+
     def test_admin_staff_delete_team(self): 
         pass
         
     def test_member_delete_team(self): 
-        # uid = 2
-        # tid = 0
-        # self.c.login(username=self.test_users[uid].username, password='password')
-        # resp = self.c.get(reverse('team_view_delete'), {'id': self.test_teams[tid].id})
-        # # self.assertEqual(resp.status_code, 200)
-        # data = json.loads(resp.content)
-        # self.assertEqual(data['error_code'], ERR_LACK_OF_AUTHORITY_CODE)
-        pass
-    
+        uid = 2
+        tid = 0
+        self.c.login(username=self.test_users[uid].username, password='password')
+        resp = self.c.get(reverse('team_view_delete'), {'id': self.test_teams[tid].id})
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], ERR_LACK_OF_AUTHORITY_CODE)
     
 class TeamDetailViewTestCase(TestCase): 
     @classmethod
