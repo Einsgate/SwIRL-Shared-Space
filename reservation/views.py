@@ -255,10 +255,11 @@ def zone_list(request):
 def team_view(request):
     if request.method == 'GET':
         if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
-            users = User.list_all()
+            users = User.list_not_admin_staff()
             teams = Team.list_all()
             team_list_title = 'Team List'
         else:
+            users = []
             teams = Team.list_all(request.user.id)
             team_list_title = 'My Teams'
         return render(request, "manage-team/team_list.html", {
@@ -273,11 +274,14 @@ def team_view_create(request):
     try:
         if request.method == 'POST':
             # Check the authority
+            print(params)
             if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
                 return JsonResponse({
                     "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
                     "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
                 })
+                
+            print(params)
                 
             # Check required fields
             params = json.loads(request.body)
@@ -287,6 +291,7 @@ def team_view_create(request):
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 });
                 
+            print(params)
             # Check team name not empty
             new_team_name = params['name']
             if len(new_team_name) == 0:
@@ -691,7 +696,6 @@ def training_apply_create(request):
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),
-            # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
         })
 
 @csrf_exempt
