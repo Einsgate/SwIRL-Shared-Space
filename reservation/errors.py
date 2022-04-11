@@ -15,7 +15,7 @@ ERR_RESERVATION_CONFLICT_MSG = "Conflit with existing reservations"
 
 # Team list errors
 ERR_LACK_OF_AUTHORITY_CODE = 3001
-ERR_LACK_OR_AUTHORITY_MSG = "Lack of authority to do this action."
+ERR_LACK_OF_AUTHORITY_MSG = "Lack of authority to do this action."
 
 ERR_MISSING_TEAM_NAME_CODE = 3002
 ERR_MISSING_TEAM_NAME_MSG = "Missing the team name."
