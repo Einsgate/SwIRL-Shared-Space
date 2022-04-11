@@ -82,7 +82,7 @@
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
 	                                        	{% if t.training_status == 0 %}
-	                                            <button id="applySubmit" onclick="applyItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
+	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
 	                                            {% endif %}
 	                                        </div>
 	                                    </td>
@@ -128,22 +128,21 @@
     <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
 
     <script>
-	    function applyItem(id) {
-			if(confirm("Are you sure to Apply?")){
+	    function deleteItem(id) {
+			if(confirm("Are you sure to Delete ?")){
 		        $.ajax({
-		            url:'{% url "training_apply_create" %}',
+		            url:'{% url "training_apply_delete" %}',
 		            data:{training_id: id},
 		            type: "GET",
 		            success:function(msg){
-		            	//$(location).attr('href','{% url "training_apply" %}');
-		            	console.log(msg);
+		            	$(location).attr('href','{% url "training_my_training" %}');
 		            },
 		            error:function(xhr,textstatus,thrown){
 		            }
 		        });
 		        return true;
 			}else{
-				alert("Cancel Apply Operation");
+				alert("Cancel Delete Operation");
 			}
 		}
     </script>

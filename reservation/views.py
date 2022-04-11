@@ -263,7 +263,7 @@ def team_view(request):
             teams = Team.list_all(request.user.id)
             team_list_title = 'My Teams'
         return render(request, "manage-team/team_list.html", {
-            "users": users, 
+            #"users": users, 
             "teams": teams,
             "team_list_title": team_list_title,
         })
@@ -602,6 +602,26 @@ def training_delete(request):
             "error_code": 0,
         })
 
+@csrf_exempt
+def training_update(request):
+    if request.method == 'GET':
+        params = request.GET
+
+        # Check required fields
+        if 'id' not in params:
+            return JsonResponse({
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
+            })
+
+        training = Training.findById(params['id'])
+        training.training_status = 2
+        training.save()
+
+        return JsonResponse({
+            "error_code": 0,
+        })
+
 @csrf_exempt 
 def training_create(request):
     try:
@@ -609,12 +629,12 @@ def training_create(request):
             # Check required fields
             params = json.loads(request.body)
 
-            if 'zoneId' not in params or 'name' not in params or 'startDate' not in params or 'endDate' not in params:
+            if 'name' not in params or 'startDate' not in params or 'endDate' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 });
-            training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id = params['zoneId'], instructor_id = params['instructorId'])
+            training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id =0, instructor_id = 0)
             training.save()
             return JsonResponse({
                 "error_code": 0,

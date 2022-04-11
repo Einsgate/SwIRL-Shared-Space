@@ -142,8 +142,7 @@
 		            data:{training_id: id},
 		            type: "GET",
 		            success:function(msg){
-		            	//$(location).attr('href','{% url "training_apply" %}');
-		            	console.log(msg);
+		            	$(location).attr('href','{% url "training_my_training" %}');
 		            },
 		            error:function(xhr,textstatus,thrown){
 		            }
