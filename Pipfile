@@ -10,6 +10,7 @@ coverage = "*"
 pytz = "*"
 python-dateutil = "*"
 django-allauth = "*"
+numpy = "*"
 
 [dev-packages]
 

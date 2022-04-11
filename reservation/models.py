@@ -80,10 +80,14 @@ class User(AbstractUser):
     @staticmethod
     def findListByEmail(email):
         return User.objects.filter(email = email)
+        
+    @staticmethod
+    def list_not_admin_staff(): 
+        return User.objects.exclude(role_id__in=[ROLE_ADMIN, ROLE_STAFF])
 
     @staticmethod
     def list_not_members(team_id):
-        return User.objects.exclude(role_id__in=[0, 1]).exclude(pk__in=TeamMember.get_team_members(team_id).values_list('user_id', flat=True))
+        return User.objects.exclude(role_id__in=[ROLE_ADMIN, ROLE_STAFF]).exclude(pk__in=TeamMember.get_team_members(team_id).values_list('user_id', flat=True))
         
     @staticmethod
     def query(user_id):
