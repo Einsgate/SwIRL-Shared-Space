@@ -43,6 +43,7 @@ urlpatterns = [
     path('training/resultUpdate', views.training_result_update, name='training_result_update'),
     path('training/delete', views.training_delete, name='training_delete'),
     path('training/create', views.training_create, name='training_create'),
+    path('training/update', views.training_update, name='training_update'),
     path('training/apply', views.training_apply, name='training_apply'),
     path('training/apply/myTrainning', views.training_my_training, name='training_my_training'),
     path('training/apply/create', views.training_apply_create, name='training_apply_create'),

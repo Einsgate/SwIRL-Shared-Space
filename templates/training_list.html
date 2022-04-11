@@ -50,7 +50,7 @@
 	                                    <th data-hide="all">Description</th>
 	                                    <th data-hide="phone">Start Time</th>
 	                                    <th data-hide="phone">End Time</th>
-	                                    <th data-toggle="true">Zone</th>
+	                                    <th data-hide="phone">Status</th>
 	                                    <th class="text-right">Action</th>
 	                                </tr>
                                 </thead>
@@ -61,10 +61,21 @@
 	                                    <td>{{t.description}}</td>
 	                                    <td>{{t.start_time}}</td>
 	                                    <td>{{t.end_time}}</td>
-	                                    <td>{{t.zone_id}}</td>
+	                                    <td>
+	                                    {% if t.training_status == 2 %}
+	                                    	<span class="label label-primary"> Finished </span>
+	                                    {% elif t.training_status == 3 %}
+	                                    	<span class="label label-warning"> Graded </span>
+	                                   	{% else %}
+	                                   		<span class="label label-danger"> Processing </span>
+	                                    {% endif %}
+	                                    </td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
-	                                            {% if request.user.role_id.id == 0 or  request.user.role_id.id == 1 %}
+	                                            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
+	                                            	{% if t.training_status == 0 or t.training_status == 1 %}
+	                                            	<button id="finishSubmit" onclick="finishItem('{{t.id}}')" class="btn-white btn btn-xs">Finish</button>
+	                                            	{% endif %}
 	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
 	                                            {% endif %}
 	                                        </div>
@@ -114,7 +125,7 @@
                                         <label>Training Title</label>
                                         <input type="text" class="form-control" id="trainingName">
                                         <label>Description of Details</label>
-                                        <input type="text" class="form-control" id="trainingDesc">
+                                        <textarea class="form-control" id="trainingDesc" ></textarea>
 			                           <div class="form-group" id="startTime">
 			                               <label class="font-normal">Start Time</label>
 			                               <div class="input-group date">
@@ -127,10 +138,7 @@
 			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='endDate' class="form-control" value="">
 			                               </div>
 			                           </div>
-                                        <label>Zone</label>
-                                        <input type="text" class="form-control" id="zoneId">
-                                        <label>Instructor</label>
-                                        <input type="text" class="form-control" id="instructorId">
+
                                     </div>
                                 </form>
                             </div>
@@ -145,7 +153,6 @@
                 </div>
             </div>
             {% endif %}
-
         </div>
         <div class="footer">
 			{% include 'common/footer.html' %}
@@ -209,6 +216,24 @@
 			}
 		}
 
+		function finishItem(id) {
+			if(confirm("Are you sure to Finish this Training?")){
+		        $.ajax({
+		            url:'{% url "training_update" %}',
+		            data:{id: id},
+                    type: "GET",
+		            success:function(msg){
+		            	$(location).attr('href','{% url "training_view" %}');
+		            },
+		            error:function(xhr,textstatus,thrown){
+		            }
+		        });
+		        return true;
+			}else{
+				alert("Cancel Update Operation");
+			}
+		}
+
 		$('#startTime .input-group.date').datetimepicker({
 		    weekStart: 1,
 		    todayBtn:  1,
@@ -242,13 +267,13 @@
             var trainingDesc = $("#trainingDesc").val();
             var startDate = $("#startTime").find("input").val();
             var endDate = $("#endTime").find("input").val();
-            var zoneId = $("#zoneId").val();
-            var instructorId = $("#instructorId").val();
+            //var zoneId = $("#zoneId").val();
+            //var instructorId = $("#instructorId").val();
 
 //          if(!confirm('Create a new team with the name ' + team_name + '?')){
 // 		        return false;
 // 			}
-            
+
             $.ajax({
                 url: '{% url "training_create" %}',
                 type: "POST",
@@ -256,13 +281,12 @@
                     name: trainingName,
                     desc: trainingDesc,
                     startDate: startDate,
-                    endDate: endDate,
-                    zoneId:zoneId,
-                    instructorId:instructorId,
+                    endDate: endDate
+                    //zoneId:zoneId,
+                    //instructorId:instructorId,
                     //leader_id: team_leader_id,
                 }),
                 success: function(data) {
-
                     if (data.error_code == 0) {
                         alert("SUCCESS");
                         ret = true;
@@ -270,7 +294,6 @@
                         alert("Oops! We have encountered an error " + data.error_msg + "!");
                         ret = false;
                     }
-                    
                     var training_name_ele = document.getElementById("trainingName");
                     training_name_ele.value = '';
                     $('#trainingModal').modal('hide');
