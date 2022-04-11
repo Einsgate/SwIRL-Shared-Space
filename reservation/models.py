@@ -109,7 +109,7 @@ class Team(models.Model):
             # FROM team INNER JOIN team_members
             # ON team.id = team_members.user_id
             # WHERE team_members.user_id = user_id
-            return Team.objects.filter(teammember__user_id__exact = user_id).annotate(num_teammembers = Count('teammember'))
+            return Team.objects.annotate(num_teammembers = Count('teammember')).filter(teammember__user_id__exact = user_id)
         
     @staticmethod
     def query(team_id):
