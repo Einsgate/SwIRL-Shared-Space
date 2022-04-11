@@ -217,8 +217,8 @@ def init_users_and_teams():
     Team.objects.all().delete()
     TeamMember.objects.all().delete()
     
-    num_users = 4
-    num_teams = 3
+    num_users = 6
+    num_teams = 5
     
     role_admin = Role.objects.get(id = ROLE_ADMIN)
     role_staff = Role.objects.get(id = ROLE_STAFF)
