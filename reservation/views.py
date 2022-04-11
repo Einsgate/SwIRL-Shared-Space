@@ -273,15 +273,11 @@ def team_view(request):
 def team_view_create(request):
     try:
         if request.method == 'POST':
-            # Check the authority
-            print(params)
             if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
                 return JsonResponse({
                     "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
                     "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
                 })
-                
-            print(params)
                 
             # Check required fields
             params = json.loads(request.body)
@@ -291,7 +287,6 @@ def team_view_create(request):
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 });
                 
-            print(params)
             # Check team name not empty
             new_team_name = params['name']
             if len(new_team_name) == 0:
@@ -336,6 +331,7 @@ def team_view_create(request):
                     # "team_name": team.name
                 })
     except Exception as e:
+        print(str(e))
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),
