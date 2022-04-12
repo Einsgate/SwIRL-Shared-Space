@@ -19,7 +19,7 @@ from django.urls import reverse
 class ReservationTestCase(TestCase):
     def setUp(self):
         self.c = Client()
-        
+
         #Reservation.objects.create(title = 'setup1', reservation_type = 0, start_time = '2000-01-01 12:00:00', end_time = '2000-01-01 12:30:00', user_id = 1)
 
     def test_is_valid(self):
@@ -216,14 +216,16 @@ def init_users_and_teams():
     User.objects.all().delete()
     Team.objects.all().delete()
     TeamMember.objects.all().delete()
+    Role.objects.all().delete()
     
     num_users = 6
     num_teams = 5
-    
-    role_admin = Role.objects.get(id = ROLE_ADMIN)
-    role_staff = Role.objects.get(id = ROLE_STAFF)
-    role_team_leader = Role.objects.get(id = ROLE_LEAD, role_name = "team leader")
-    role_member = Role.objects.get(id = ROLE_MEMBER, role_name = "member")
+    role_admin = Role.objects.create(id = 0, role_name = "admin")
+    role_admin.save()
+    role_staff = Role.objects.create(id = 1, role_name = "staff")
+    role_staff.save()
+    role_member = Role.objects.create(id = ROLE_MEMBER, role_name = "member")
+    role_member.save()
 
     # Initialize users.
     test_users = [
@@ -389,7 +391,7 @@ class TeamListViewTestCase(TestCase):
         valid_leader_id = str(self.test_users[2].id)
         
         # Test the wrong field cases
-        post_body_list = [
+        post_req_body_list = [
             # Missing the leader_id
             {'name': valid_team_name},       
             # Missing the name
@@ -404,7 +406,7 @@ class TeamListViewTestCase(TestCase):
             {'name': valid_team_name, 'leader_id': str(self.test_users[1].id)}, 
         ]
         
-        response_list = [
+        post_res_code_list = [
             ERR_MISSING_REQUIRED_FIELD_CODE, 
             ERR_MISSING_REQUIRED_FIELD_CODE, 
             ERR_MISSING_TEAM_NAME_CODE, 
@@ -416,13 +418,13 @@ class TeamListViewTestCase(TestCase):
         for username in [self.test_users[0].username, self.test_users[1].username]:
             self.c.login(username=username, password='password')
         
-            for post_body, response in zip(post_body_list, response_list):
-                resp = self.c.post(reverse('team_view_create'), json.dumps(post_body), content_type="application/json")
+            for req_body, res_code in zip(post_req_body_list, post_res_code_list):
+                resp = self.c.post(reverse('team_view_create'), json.dumps(req_body), content_type="application/json")
                 self.assertEqual(resp.status_code, 200)
                 
                 data = json.loads(resp.content)
                 # print(data['error_msg'])
-                self.assertEqual(data['error_code'], response)
+                self.assertEqual(data['error_code'], res_code)
                 
                 self.assertEqual(Team.objects.all().count(), self.n_teams)
                 self.assertEqual(TeamMember.objects.count(), self.n_team_members)
@@ -473,34 +475,280 @@ class TeamListViewTestCase(TestCase):
         self.assertEqual(Team.objects.all().count(), self.n_teams)
         self.assertEqual(TeamMember.objects.count(), self.n_team_members)
         
-    def test_admin_staff_edit_team(self): 
-        # team_index = 2
-        # valid_team_id = self.test_teams[team_index].id
-        # valid_team_name = 'abc'
-        # valid_team_leader_id = self.test_members[3].id
-        # payload_list = [
-        #     # Missing the team_name
-        #     {'team_id': valid_team_id, 'team_name': '', 'team_leader_id': valid_team_leader_id},       
-        #     # Missing the leader_id
-        #     {'team_id': valid_team_id, 'team_name': valid_team_name: 'team_leader_id', ''},   
-        # ]
+    def admin_staff_edit_team_get(self):
+        uid_list = [0, 1]
+        tid_list = [0, 4]
+        get_req_body_team_list = [
+            # Test get_bodies for test_teams[0]
+            [
+                # Missing team_id
+                {}, 
+                {'team_id': str(self.test_teams[tid_list[0]].id), }, 
+            ], 
+            # Test get_bodies for test_teams[4]
+            [
+                # Missing team_id
+                {}, 
+                {'team_id': str(self.test_teams[tid_list[1]].id), }, 
+            ]
+        ]
         
-        # response_list = [
-        #     {'team_name': self.test_teams[team_index].name, 'team_leader_id': valid_team_id
-            
-        # ]
-        pass
+        get_res_body_team_list = [
+            [
+                {'error_code': ERR_LACK_OF_AUTHORITY_CODE}, 
+                {   
+                    'error_code': 0, 
+                    'team_name': self.test_teams[tid_list[0]].name, 
+                    'team_leader_id': -1, 
+                    'members': [[m.id, m.username, m.email] for m in self.test_users[2: ]], 
+                }, 
+            ], 
+            [
+                {'error_code': ERR_LACK_OF_AUTHORITY_CODE}, 
+                {   
+                    'error_code': 0, 
+                    'team_name': self.test_teams[tid_list[1]].name, 
+                    'team_leader_id': -1, 
+                    'members': [[m.id, m.username, m.email] for i, m in enumerate(self.test_users[2: ]) if tid_list[1] % i == 0], 
+                }, 
+            ], 
+        ]
         
-    def test_member_edit_team(self): 
+        for uid in uid_list: 
+            self.c.login(username=self.test_users[uid].username, password='password')
+            # test_teams[0] has all test_users as its members but no lead.
+            # test_teams[4] has test_users[2] and test_users[4] as its members and the lead is test_users[2].
+            for tid, get_req_body_list, get_res_body_list in zip(tid_list, get_req_body_team_list, get_res_body_team_list):
+                
+                # Get request
+                for req_body, res_body in zip(get_req_body_list, get_res_body_list): 
+                    resp = self.c.get(reverse('team_view_update'), req_body)
+                    self.assertEqual(resp.status_code, 200)
+                    data = json.loads(resp.content)
+                    self.assertEqual(data['error_code'], res_body['error_code'])
+                    if res_body['error_code'] == 0: 
+                        self.assertEqual(data['team_name'], res_body['team_name'])
+                        self.assertEqual(data['team_leader_id'], res_body['team_leader_id'])
+                        self.assertEqual(data['team_leader_id'], res_body['team_leader_id'])
+                        self.assertEqual(sorted(data['team_leader_id'], key=itemgetter(0)), sorted(res_body['team_leader_id'], key=itemgetter(0)))
+        
+    def test_admin_staff_edit_team_post(self): 
+        uid_list = [0, 1]
+        tid_list = [0, 4]
+        
+        valid_team_name = 'test_abc'
+        valid_team_leader_id = self.test_users[4].id
+        valid_team_leader_id_str = str(valid_team_leader_id)
+        valid_team_leader_user_name = self.test_users[4].username
+        post_req_body_team_list = [
+            # Test get_bodies for test_teams[0]
+            [
+                # Missing team_id
+                {'team_name': valid_team_name, 'team_leader_id': valid_team_leader_id_str}, 
+                # Missing team_name
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_leader_id': valid_team_leader_id_str}, 
+                # Missing team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': '-2'}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[0].id)}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[1].id)}, 
+                # Unchanged team_name
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': '', 'team_leader_id': valid_team_leader_id_str}, 
+                # Unchanged team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': '-1'}, 
+                # Unchanged team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': ''}, 
+                # Changed team name and team leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': valid_team_leader_id_str}, 
+            ], 
+            # Test get_bodies for test_teams[4]
+            [
+                # Missing team_id
+                {'team_name': valid_team_name, 'team_leader_id': valid_team_leader_id_str}, 
+                # Missing team_name
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_leader_id': valid_team_leader_id_str}, 
+                # Missing team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': '-2'}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[0].id)}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[1].id)}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[3].id)}, 
+                # Unchanged team_name
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': '', 'team_leader_id': valid_team_leader_id_str}, 
+                # Unchanged team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': '-1'}, 
+                # Unchanged team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': ''}, 
+                # Changed team name and team leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': valid_team_leader_id_str}, 
+            ]
+        ]
+        
+        # The field 'new_team_name' is not a field in the real post body. 
+        # Here we use this for checking whether the team name changed correctly.
+        post_res_body_team_list = [
+            [
+                 # Missing team_id
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Missing team_name
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Missing team_leader_id
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_INTERNAL_ERROR_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE}, 
+                # Unchanged team_name
+                {
+                    'error_code': 0, 
+                    'new_team_name': self.test_teams[tid_list[0]].name, 
+                    'new_team_leader_id': valid_team_leader_id, 
+                    'new_team_leader_username': valid_team_leader_user_name, 
+                }, 
+                # Unchanged team_leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': -1, 
+                    'new_team_leader_username': '', 
+                }, 
+                # Unchanged team_leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': -1, 
+                    'new_team_leader_username': '', 
+                }, 
+                # Changed team name and team leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': valid_team_leader_id, 
+                    'new_team_leader_username': valid_team_leader_user_name, 
+                }, 
+            ], 
+            [
+                # Missing team_id
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Missing team_name
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Missing team_leader_id
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_INTERNAL_ERROR_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE},
+                # Unchanged team_name
+                {
+                    'error_code': 0, 
+                    'new_team_name': self.test_teams[tid_list[1]].name, 
+                    'new_team_leader_id': valid_team_leader_id, 
+                    'new_team_leader_username': valid_team_leader_user_name, 
+                }, 
+                # Unchanged team_leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': self.test_users[tid_list[1]].id, 
+                    'new_team_leader_username': self.test_users[tid_list[1]].username,  
+                }, 
+                # Unchanged team_leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': self.test_users[tid_list[1]].id, 
+                    'new_team_leader_username': self.test_users[tid_list[1]].username,  
+                }, 
+                # Changed team name and team leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': valid_team_leader_id, 
+                    'new_team_leader_username': valid_team_leader_user_name, 
+                }, 
+            ],  
+        ]
+        
+        for uid in uid_list: 
+            self.c.login(username=self.test_users[uid].username, password='password')
+            # test_teams[0] has all test_users as its members but no lead.
+            # test_teams[4] has test_users[2] and test_users[4] as its members and the lead is test_users[2].
+            for tid, post_req_body_list, post_res_body_list in zip(tid_list, post_req_body_team_list, post_res_body_team_list):
+                
+                # POST request
+                for req_body, res_body in zip(post_req_body_list, post_res_body_list): 
+                    # print(tid, req_body, res_body)
+                    old_team_name = self.test_teams[tid].name
+                    old_leader_id  = self.test_teams[tid].leader_id
+                    
+                    resp = self.c.post(reverse('team_view_update'), json.dumps(req_body), content_type="application/json")
+                    self.assertEqual(resp.status_code, 200)
+                    data = json.loads(resp.content)
+                    self.assertEqual(data['error_code'], res_body['error_code'])
+                    if res_body['error_code'] == 0: 
+                        self.assertEqual(data['new_team_leader_id'], res_body['new_team_leader_id'])
+                        self.assertEqual(data['new_team_leader_username'], res_body['new_team_leader_username'])
+                        self.assertEqual(Team.query(self.test_teams[tid].id).name, res_body['new_team_name'])
+                        
+                    # Recover the original record
+                    self.test_teams[tid].name = old_team_name
+                    self.test_teams[tid].leader_id = old_leader_id
+                    self.test_teams[tid].save()
+        
+    def test_member_edit_team_get_post(self): 
         uid = 2
-        tid = 0
+        tid = uid   # This team is leaded by self.test_users[uid]
         self.c.login(username=self.test_users[uid].username, password='password')
-        resp = self.c.post(reverse('team_view_update'), json.dumps({
-            'team_id': self.test_teams[tid].id, 'team_name': 'abc', 'team_leader_id': self.test_users[uid].id
-        }), content_type="application/json")
-        self.assertEqual(resp.status_code, 200)
-        data = json.loads(resp.content)
-        self.assertEqual(data['error_code'], ERR_LACK_OF_AUTHORITY_CODE)
+        
+        # Get request
+        get_req_body_list = [
+            # Missing team_id
+            {}, 
+            {'team_id': self.test_teams[tid].id, }, 
+        ]
+        
+        get_res_code_list = [
+            ERR_LACK_OF_AUTHORITY_CODE, 
+            ERR_LACK_OF_AUTHORITY_CODE, 
+        ]
+        
+        for req_body, res_code in zip(get_req_body_list, get_res_code_list): 
+            resp = self.c.get(reverse('team_view_update'), req_body)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
+            
+        # POST request
+        post_req_body_list = [
+            # Missing some field. But because we first check the authority, so the response should also be str(self.test_teams[tid].id)
+            {'team_id': str(self.test_teams[tid].id)}, 
+            # A normal request body.
+            {'team_id': str(self.test_teams[tid].id), 'team_name': 'abc', 'team_leader_id': self.test_users[uid].id}
+        ]
+        
+        post_res_code_list = [
+            ERR_LACK_OF_AUTHORITY_CODE, 
+            ERR_LACK_OF_AUTHORITY_CODE, 
+        ]
+        
+        for req_body, res_code in zip(post_req_body_list, post_res_code_list): 
+            resp = self.c.post(reverse('team_view_update'), json.dumps(req_body), content_type="application/json")
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
 
     def test_admin_staff_delete_team(self): 
         pass

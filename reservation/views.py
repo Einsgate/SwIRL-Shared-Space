@@ -375,7 +375,14 @@ def team_view_update(request):
                     "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
                 })
                 
-            team_id = request.GET.get('team_id')
+            params = request.GET
+            if 'team_id' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                });
+                
+            team_id = params['team_id']
             team = Team.query(team_id)
             teammembers = TeamMember.get_team_members(team_id)
             team_name = team.name;
@@ -383,7 +390,9 @@ def team_view_update(request):
                 team_leader_id = -1
             else:
                 team_leader_id = team.leader_id.id
-            teammembers_user_id = [[teammember.user_id.id,  teammember.user_id.username, teammember.user_id.email] for teammember in teammembers]
+                
+            teammembers_user_id = [[teammember.user_id.id, teammember.user_id.username, teammember.user_id.email] for teammember in teammembers]
+            
             return JsonResponse({
                 "error_code": 0, 
                 "team_name": team_name, 
@@ -410,6 +419,7 @@ def team_view_update(request):
             
             # update the team name
             new_team_name = params['team_name']
+            # If the team_name is empty, it won't report error and keep the name unchanged. 
             if len(new_team_name) == 0:
                 new_team_name = team.name
             elif new_team_name != team.name:
@@ -417,21 +427,34 @@ def team_view_update(request):
                 team.name = new_team_name
 
             # update the leader
-            new_team_leader_id = params['team_leader_id']
-            if len(new_team_leader_id) == 0:
-                new_team_leader_id = team.leader_id.id
-            elif new_team_leader_id != "-1":
+            new_team_leader_id = -1 if len(params['team_leader_id']) == 0 else int(params['team_leader_id']) 
+            new_team_leader_username = ''
+            
+            if ~new_team_leader_id: 
+                # If the leader_id is an invalud number, it'll 
                 new_team_leader = User.query(new_team_leader_id)
-                if new_team_leader.role_id.id in (ROLE_ADMIN, ROLE_STAFF):
+                if new_team_leader == None:
                     return JsonResponse({
-                        "error_code": ERR_ADMIN_STAFF_TEAM_LEADER_CODE, 
-                        "error_msg": ERR_ADMIN_STAFF_TEAM_LEADER_MSG, 
+                        "error_code": ERR_LEADER_INVALID_CODE, 
+                        "error_msg": ERR_LEADER_INVALID_MSG, 
+                    });
+                    
+                # The leader can't be a user not in this team
+                if TeamMember.get_by_team_members(team_id = team.id, user_id = new_team_leader_id) == None:
+                    return JsonResponse({
+                        "error_code": ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE, 
+                        "error_msg": ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_MSG, 
                     });
                 
-                new_team_username = new_team_leader.username
+                new_team_leader_username = new_team_leader.username
                 if team.leader_id == None or new_team_leader_id != team.leader_id.id:
                     updated = True
                     team.leader_id = new_team_leader
+            else:
+                # If the team_leader_id is empty, it won't report error and keep the leader_id unchanged. 
+                if team.leader_id != None:
+                    new_team_leader_id = team.leader_id.id
+                    new_team_leader_username = team.leader_id.username
 
             # update the database only if some field has been changed
             if updated:
@@ -440,9 +463,10 @@ def team_view_update(request):
             return JsonResponse({
                 "error_code": 0,
                 "new_team_leader_id": new_team_leader_id, 
-                "new_team_leader_username": new_team_username, 
+                "new_team_leader_username": new_team_leader_username, 
             });
     except Exception as e:
+        # print(str(e))
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),

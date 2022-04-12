@@ -26,6 +26,12 @@ ERR_MISSING_TEAM_LEADER_MSG = "Missing the team leader."
 ERR_ADMIN_STAFF_TEAM_LEADER_CODE = 3004
 ERR_ADMIN_STAFF_TEAM_LEADER_MSG = "The leader can't be an admin or a staff."
 
+ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE = 3005
+ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_MSG = "The new leader should be a member in the team."
+
+ERR_LEADER_INVALID_CODE = 3006
+ERR_LEADER_INVALID_MSG = "The leader id is invalid."
+
 # Team detail errors
 ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE = 4001
 ERR_NOT_A_MEMBER_OF_THE_TEAM_MSG = "Delete a member not in the team."
