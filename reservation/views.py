@@ -547,7 +547,7 @@ def team_detail_delete(request, team_id):
         # Check the authority
         if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
             # The team leader can't delete the leader of the team (which is himself or herself).
-            if team.leader_id == teammember.user_id or request.user.id != team.leader_id.id: 
+            if request.user.id != team.leader_id.id or team.leader_id.id == teammember.user_id.id: 
                 return JsonResponse({
                     "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
                     "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
