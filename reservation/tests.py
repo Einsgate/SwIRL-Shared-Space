@@ -751,7 +751,38 @@ class TeamListViewTestCase(TestCase):
             self.assertEqual(data['error_code'], res_code)
 
     def test_admin_staff_delete_team(self): 
-        pass
+        uid_list = [0, 0, 1]
+        tid_list = [-1, 0, 2]
+        req_body_list = [
+            # Missing team_id
+            {}, 
+            {'id': str(self.test_teams[tid_list[1]].id), }, 
+            {'id': str(self.test_teams[tid_list[2]].id), }, 
+        ]
+        
+        res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            0, 
+            0, 
+        ]
+        
+        cur_n_teams = self.n_teams
+        cur_n_team_members = self.n_team_members
+        for uid, tid, req_body, res_code in zip(uid_list, tid_list, req_body_list, res_code_list): 
+            self.c.login(username=self.test_users[uid].username, password='password')
+            resp = self.c.get(reverse('team_view_delete'), req_body)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
+            if res_code == 0: 
+                cur_n_teams -= 1
+                cur_n_team_members -= len([x for x in range(2, self.n_users) if tid % x == 0])
+                self.assertEqual(Team.objects.all().count(), cur_n_teams)
+                with self.assertRaisesMessage(Team.DoesNotExist, 'Team matching query does not exist'):
+                    Team.query(self.test_teams[tid].id)
+                self.assertEqual(TeamMember.objects.all().count(), cur_n_team_members)
+                self.assertEqual(TeamMember.get_team_members(team_id = self.test_teams[tid].id).count(), 0)
+                
         
     def test_member_delete_team(self): 
         uid = 2
@@ -784,5 +815,32 @@ class TeamDetailViewTestCase(TestCase):
         pass
     
     def test_member_delete_members(self):
-        pass
+        uid_list = [2, 3, 2]
+        tid_list = [4, 3, 4]
+        # test_users[2] is a member but not the leader of test_teams[4]
+        # So test_users[3] isn't a member in test_teams[4], test_users[2] is a member but not the leader of test_teams[4]
+        # They both have no authority to delete members
+        team_member = TeamMember.get_by_team_members(team_id = self.test_teams[4].id, user_id = self.test_users[2].id)
+        # Get request
+        get_req_body_list = [
+            # Missing team_id
+            {}, 
+            # Delete a member not in this team
+            {'id': str(team_member.id), }, 
+            # Neither admin / staff or the team leader 
+            {'id': str(team_member.id), }
+        ]
+        
+        get_res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE, 
+            ERR_LACK_OF_AUTHORITY_CODE, 
+        ]
+        
+        for uid, tid, req_body, res_code in zip(uid_list, tid_list, get_req_body_list, get_res_code_list): 
+            self.c.login(username=self.test_users[uid].username, password='password')
+            resp = self.c.get(reverse('team_detail_delete', args = [self.test_teams[tid].id]), req_body)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
         
