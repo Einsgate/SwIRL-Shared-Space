@@ -11,7 +11,7 @@
     <link href="/static/css/plugins/footable/footable.core.css" rel="stylesheet">
     <link href="/static/css/animate.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
-    
+    <link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
 </head>
 
 <body>
@@ -111,31 +111,43 @@
 
     <!-- Typehead -->
     <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
-
+    <!-- Sweet alert -->
+    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
     <script>
 	    $('.sel').change(function(){
 	        var sel = $(this);
 	        var tid = sel.attr("trainId");
 	        var status = sel.val();
-	    	if(confirm("Are you sure to Apply?")){
-		        $.ajax({
-		            url:'{% url "training_result_update" %}',
-	                data: JSON.stringify({ 
-	                    id: tid,
-	                    status: status
-	                }),
-		            type: "POST",
-		            success:function(msg){
-		            	//$(location).attr('href','{% url "training_apply" %}');
-		            	console.log(msg);
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Apply Operation");
-			}
+	        swal({
+                title: "Are you sure to Grade this record ?",
+                text: "You still have chance to change this record!",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Yes, GRADE it!",
+                cancelButtonText: "No, Cancel !",
+                closeOnConfirm: false
+            },function (isConfirm) {
+                if (isConfirm) {
+	            $.ajax({
+	                url:'{% url "training_result_update" %}',
+	                  data: JSON.stringify({ 
+	                      id: tid,
+	                      status: status
+	                  }),
+	                type: "POST",
+	                success:function(msg){
+	                	window.location.reload();
+	                },
+	                error:function(xhr,textstatus,thrown){
+	                }
+	            });
+                swal("GRADED!", "This record has been GRADE.", "success");
+                return true;
+                } else {
+                    swal("Cancelled", "This record is safe :)", "error");
+                }
+            });
 	    });
 
     </script>

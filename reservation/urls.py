@@ -16,7 +16,7 @@ urlpatterns = [
     path('usermng/deleteByRole', views.user_delete, name='user_delete'),
     path('usermng/authUser', views.authority_user, name='authority_user'),
     re_path('usermng/authUserDetail/(\d+)/', views.authority_detail, name='authority_detail'),
-    path('usermng/authUserUpdate', views.authority_udpate, name='authority_update'),
+    path('usermng/authUserUpdate', views.authority_update, name='authority_update'),
 
     #reservation
     path('reservation/index', views.index, name='reservation_index'),

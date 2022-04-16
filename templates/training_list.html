@@ -13,6 +13,7 @@
     <link href="/static/css/style.css" rel="stylesheet">
     <link href="/static/css/plugins/datapicker/datepicker3.css" rel="stylesheet">
     <link href="/static/css/plugins/datapicker/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
 </head>
 
 <body>
@@ -67,18 +68,20 @@
 	                                    {% elif t.training_status == 3 %}
 	                                    	<span class="label label-warning"> Graded </span>
 	                                   	{% else %}
-	                                   		<span class="label label-danger"> Processing </span>
+	                                   		<span class="label label-success"> Processing </span>
 	                                    {% endif %}
 	                                    </td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
 	                                            {% if request.user.role_id.id == 0 or request.user.role_id.id == 1 %}
 	                                            	{% if t.training_status == 0 or t.training_status == 1 %}
-	                                            	<button id="finishSubmit" onclick="finishItem('{{t.id}}')" class="btn-white btn btn-xs">Finish</button>
+	                                            	<button id="finishSubmit" onclick="finishItem('{{t.id}}')" class="btn btn-primary btn-sm finishSubmit">Finish</button>
+	                                         </div>
 	                                            	{% endif %}
-	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
+	                                         <div class="btn-group">
+	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn btn-danger btn-sm deleteSubmit">Delete</button>
+	                                         </div>
 	                                            {% endif %}
-	                                        </div>
 	                                    </td>
 	                                </tr>
 									{% endfor %}
@@ -103,7 +106,6 @@
             <div class="row">
                 <div class="col-lg-12">
                     <button class="btn btn-primary  pull-right" type="button" id="training-add-button", style="align: right">Add</button> 
-                   
                     <!-- The popup dialog to create a team. -->
                     <!-- Modal -->
                     <div class="modal fade" id="trainingModal" role="dialog">
@@ -143,7 +145,7 @@
                                 </form>
                             </div>
                             <div class="modal-footer">
-                                <button class="btn btn-primary" type="submit" id="training-submit-button" value={{request.user.id}}>Add</button>
+                                <button class="btn btn-primary applyTraining" onclick="applyTraining('{{request.user.id}}')" id="training-submit-button">Add</button>
                                 <!--<button class="btn btn-white pull-right" type="close" id="team-cancel-button">Cancel</button>-->
                             </div>
                           </div>
@@ -175,63 +177,72 @@
     <!-- Custom and plugin javascript -->
     <script src="/static/js/inspinia.js"></script>
     <script src="/static/js/plugins/pace/pace.min.js"></script>
-
+    <!-- Sweet alert -->
+    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-    
-    <script>
-		function apply(id) {
-			if(confirm("Are you sure to Apply?")){
-		        $.ajax({
-		            url:'{% url "training_apply" %}',
-		            data:JSON.stringify({id: id, user_id: user_id, start_time: start_time, end_time: end_time, zone_id: zone_id}),
-                    type: "POST",
-		            success:function(msg){
-		            	$(location).attr('href','{% url "training_view" %}');
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Apply Operation");
-			}
-		}
 
+    <script>
 		function deleteItem(id) {
-			if(confirm("Are you sure to Delete?")){
-		        $.ajax({
-		            url:'{% url "training_delete" %}',
-		            data:{id: id},
-                    type: "GET",
-		            success:function(msg){
-		            	$(location).attr('href','{% url "training_view" %}');
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Delete Operation");
-			}
+	      swal({
+                title: "Are you sure to DELETE ?",
+                text: "Your will not be able to recover this record!",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Yes, DELETE it!",
+                cancelButtonText: "No, Cancel !",
+                closeOnConfirm: false,
+                closeOnCancel: false },
+            function (isConfirm) {
+                if (isConfirm) {
+                $.ajax({
+                    url:'{% url "training_delete" %}',
+                    data:{id: id},
+                        type: "GET",
+                    success:function(msg){
+                      $(location).attr('href','{% url "training_view" %}');
+                    },
+                    error:function(xhr,textstatus,thrown){
+                    }
+                });
+                  swal("Deleted!", "Your record has been DELETED.", "success");
+                return true;
+                } else {
+                    swal("Cancelled", "Your record is safe :)", "error");
+                }
+            });
 		}
 
 		function finishItem(id) {
-			if(confirm("Are you sure to Finish this Training?")){
-		        $.ajax({
-		            url:'{% url "training_update" %}',
-		            data:{id: id},
-                    type: "GET",
-		            success:function(msg){
-		            	$(location).attr('href','{% url "training_view" %}');
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Update Operation");
-			}
+		      swal({
+	                title: "Are you sure to FINISH it ?",
+	                text: "Your will not be able to recover this record!",
+	                type: "warning",
+	                showCancelButton: true,
+	                confirmButtonColor: "#DD6B55",
+	                confirmButtonText: "Yes, FINISH it!",
+	                cancelButtonText: "No, Cancel !",
+	                closeOnConfirm: false,
+	                closeOnCancel: false },
+	            function (isConfirm) {
+	                if (isConfirm) {
+		            $.ajax({
+		                url:'{% url "training_update" %}',
+		                data:{id: id},
+		                    type: "GET",
+		                success:function(msg){
+		                  $(location).attr('href','{% url "training_view" %}');
+		                },
+		                error:function(xhr,textstatus,thrown){
+		                }
+		            });
+	                swal("FINISH!", "This apply has been FINISH.", "success");
+	                return true;
+	                } else {
+	                    swal("Cancelled", "This apply is safe :)", "error");
+	                }
+	            });
 		}
 
 		$('#startTime .input-group.date').datetimepicker({
@@ -262,55 +273,47 @@
             $("#trainingModal").modal();
         });
 
-        $("#training-submit-button").click(function() {
+        function applyTraining(id) {
             var trainingName = $("#trainingName").val();
             var trainingDesc = $("#trainingDesc").val();
             var startDate = $("#startTime").find("input").val();
             var endDate = $("#endTime").find("input").val();
-            //var zoneId = $("#zoneId").val();
-            //var instructorId = $("#instructorId").val();
-
-//          if(!confirm('Create a new team with the name ' + team_name + '?')){
-// 		        return false;
-// 			}
-
-            $.ajax({
-                url: '{% url "training_create" %}',
-                type: "POST",
-                data: JSON.stringify({ 
-                    name: trainingName,
-                    desc: trainingDesc,
-                    startDate: startDate,
-                    endDate: endDate
-                    //zoneId:zoneId,
-                    //instructorId:instructorId,
-                    //leader_id: team_leader_id,
-                }),
-                success: function(data) {
-                    if (data.error_code == 0) {
-                        alert("SUCCESS");
-                        ret = true;
-                    } else {
-                        alert("Oops! We have encountered an error " + data.error_msg + "!");
-                        ret = false;
-                    }
-                    var training_name_ele = document.getElementById("trainingName");
-                    training_name_ele.value = '';
-                    $('#trainingModal').modal('hide');
-                    window.location.reload();
-                },
-            });
-            return ret;
-        });
-        
-        // $("#team-cancel-button").click(function() {
-        //     var team_name_ele = document.getElementById("team-name");
-        //     var team_leader_id_ele = document.getElementById("team-leader");
-        //     team_name_ele.value = '';
-        //     team_leader_id_ele.value = '';
-        // });
-        
-        
+            swal({
+                title: "Are you sure to APPLY ?",
+                text: "You can find it at your training list!",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Yes, APPLY it!",
+                cancelButtonText: "No, Cancel !",
+                closeOnConfirm: false,
+                closeOnCancel: false },
+	            function (isConfirm) {
+	                if (isConfirm) {
+	                $.ajax({
+	                    url: '{% url "training_create" %}',
+	                    type: "POST",
+	                    data: JSON.stringify({ 
+	                        name: trainingName,
+	                        desc: trainingDesc,
+	                        startDate: startDate,
+	                        endDate: endDate
+	                        //zoneId:zoneId,
+	                        //instructorId:instructorId,
+	                        //leader_id: team_leader_id,
+	                    }),
+	                    success: function(data) {
+	                        if (data.error_code == 0) {
+	                            swal("Successed!", "Your apply has been accepted.", "success");
+	                        } else {
+	                            swal("Failed!", "Oops! We have encountered an error " + data.error_msg + "!", "error");
+	                        }
+	                        window.location.reload();
+	                    }
+	                });
+	              }
+             });
+        }
     </script>
 
 </body>

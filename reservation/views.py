@@ -74,7 +74,7 @@ def authority_detail(request, id):
     })
 
 @login_required
-def authority_udpate(request):
+def authority_update(request):
     team_list = Team.list_all(0)
     if request.method == 'GET':
         params = request.GET
@@ -596,7 +596,6 @@ def training_result_update(request):
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
             });
-        print(params)
         training = TrainingDetail.findById(params['id'])
         training.training_result = params['status']
         training.save()

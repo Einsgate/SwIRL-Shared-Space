@@ -11,7 +11,7 @@
     <link href="/static/css/plugins/footable/footable.core.css" rel="stylesheet">
     <link href="/static/css/animate.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
-    
+    <link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
 </head>
 
 <body>
@@ -82,7 +82,7 @@
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
 	                                        	{% if t.training_status == 0 %}
-	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn-white btn btn-xs">Delete</button>
+	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn btn-danger btn-sm deleteSubmit">Delete</button>
 	                                            {% endif %}
 	                                        </div>
 	                                    </td>
@@ -126,24 +126,39 @@
 
     <!-- Typehead -->
     <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
+    <!-- Sweet alert -->
+    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
 
     <script>
 	    function deleteItem(id) {
-			if(confirm("Are you sure to Delete ?")){
-		        $.ajax({
-		            url:'{% url "training_apply_delete" %}',
-		            data:{training_id: id},
-		            type: "GET",
-		            success:function(msg){
-		            	$(location).attr('href','{% url "training_my_training" %}');
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Delete Operation");
-			}
+	        swal({
+                title: "Are you sure to DELETE ?",
+                text: "Your will not be able to recover this record!",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Yes, DELETE it!",
+                cancelButtonText: "No, Cancel !",
+                closeOnConfirm: false,
+                closeOnCancel: false },
+            function (isConfirm) {
+                if (isConfirm) {
+	            $.ajax({
+	                url:'{% url "training_apply_delete" %}',
+	                data:{id: id},
+	                type: "GET",
+	                success:function(msg){
+	                  $(location).attr('href','{% url "training_my_training" %}');
+	                },
+	                error:function(xhr,textstatus,thrown){
+	                }
+	            });
+                swal("Deleted!", "Your record has been DELETED.", "success");
+                return true;
+                } else {
+                    swal("Cancelled", "Your record is safe :)", "error");
+                }
+            });
 		}
     </script>
 

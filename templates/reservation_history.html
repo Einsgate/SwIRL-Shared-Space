@@ -12,6 +12,8 @@
     <link href="/static/css/animate.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
     <link href="/static/css/plugins/datapicker/datepicker3.css" rel="stylesheet">
+    <!-- Sweet Alert -->
+    <link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
 </head>
 
 <body>
@@ -120,7 +122,7 @@
 	                                    <td>{{reserve.end_time}}</td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
-	                                            <button id="deleteSubmit" onclick="deleteItem('{{reserve.id}}')" class="btn-white btn btn-xs">Delete</button>
+	                                        	<button id="deleteSubmit" onclick="deleteItem('{{reserve.id}}')" class="btn btn-danger btn-sm deleteSubmit" >Delete</button>
 	                                        </div>
 	                                    </td>
 	                                </tr>
@@ -164,38 +166,40 @@
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
 
+    <!-- Sweet alert -->
+    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
+
     <!-- Page-Level Scripts -->
-    <!-- Mainly scripts -->
-    <script src="/static/js/jquery-3.1.1.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
-    <script src="/static/js/plugins/metisMenu/jquery.metisMenu.js"></script>
-    <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
-
-    <!-- Custom and plugin javascript -->
-    <script src="/static/js/inspinia.js"></script>
-    <script src="/static/js/plugins/pace/pace.min.js"></script>
-
-    <!-- FooTable -->
-    <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-
 	<script>
 		function deleteItem(id) {
-			if(confirm("Are you sure to Delete?")){
-		        $.ajax({
-		            url:'{% url "reservation_delete" %}',
-		            data:{id: id},
-                    type: "GET",
-		            success:function(msg){
-		            	$("#itemId_"+id).remove();
-		            	
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Delete Operation");
-			}
+			swal({
+                title: "Are you sure to DELETE ?",
+                text: "Your will not be able to recover this record!",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Yes, DELETE it!",
+                cancelButtonText: "No, Cancel !",
+                closeOnConfirm: false,
+                closeOnCancel: false },
+            function (isConfirm) {
+                if (isConfirm) {
+    		        $.ajax({
+    		            url:'{% url "reservation_delete" %}',
+    		            data:{id: id},
+                        type: "GET",
+    		            success:function(msg){
+    		            	$(location).attr('href','{% url "reservation_history" %}');
+    		            },
+    		            error:function(xhr,textstatus,thrown){
+    		            }
+    		        });
+                	swal("Deleted!", "Your record has been DELETED.", "success");
+    		        return true;
+                } else {
+                    swal("Cancelled", "Your record is safe :)", "error");
+                }
+            });
 		}
 	</script>
 
