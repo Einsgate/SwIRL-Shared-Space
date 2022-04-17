@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse,HttpResponseRedirect
 from django.template import loader
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import PermissionDenied
 
 import json
 from django.utils.dateparse import parse_datetime
@@ -475,6 +476,8 @@ def team_view_update(request):
 # Team details
 # Show all team members.
 def team_detail(request, team_id):
+    if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF) and TeamMember.get_by_team_members(team_id = team_id, user_id = request.user.id) == None: 
+        raise PermissionDenied
     members = TeamMember.get_team_members(team_id)
     not_members = User.list_not_members(team_id)
     team = Team.query(team_id)
@@ -511,6 +514,16 @@ def team_detail_update(request, team_id):
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 })
+                
+            for user_id in params['selected_members']:
+                # If there's no such a user, it will throw an exception.
+                user = User.query(user_id)
+                # The role of new added members shouldn't be admin or staff.
+                if user.role_id.id in (ROLE_ADMIN, ROLE_STAFF):
+                    return JsonResponse({
+                        "error_code": ERR_ADD_INVALID_MEMBER_CODE, 
+                        "error_msg": ERR_ADD_INVALID_MEMBER_MSG, 
+                    })
                 
             for user_id in params['selected_members']:
                 TeamMember.objects.get_or_create(user_id = User.query(user_id), team_id = Team.query(team_id))

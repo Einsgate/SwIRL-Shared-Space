@@ -12,6 +12,7 @@ import numpy as np
 import random
 
 from django.urls import reverse
+from django.core.exceptions import PermissionDenied
 
 # Create your tests here.
 
@@ -475,7 +476,7 @@ class TeamListViewTestCase(TestCase):
         self.assertEqual(Team.objects.all().count(), self.n_teams)
         self.assertEqual(TeamMember.objects.count(), self.n_team_members)
         
-    def admin_staff_edit_team_get(self):
+    def test_admin_staff_edit_team_get(self):
         uid_list = [0, 1]
         tid_list = [0, 4]
         get_req_body_team_list = [
@@ -495,7 +496,7 @@ class TeamListViewTestCase(TestCase):
         
         get_res_body_team_list = [
             [
-                {'error_code': ERR_LACK_OF_AUTHORITY_CODE}, 
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
                 {   
                     'error_code': 0, 
                     'team_name': self.test_teams[tid_list[0]].name, 
@@ -504,12 +505,12 @@ class TeamListViewTestCase(TestCase):
                 }, 
             ], 
             [
-                {'error_code': ERR_LACK_OF_AUTHORITY_CODE}, 
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
                 {   
                     'error_code': 0, 
                     'team_name': self.test_teams[tid_list[1]].name, 
-                    'team_leader_id': -1, 
-                    'members': [[m.id, m.username, m.email] for i, m in enumerate(self.test_users[2: ]) if tid_list[1] % i == 0], 
+                    'team_leader_id': self.test_teams[tid_list[1]].leader_id.id, 
+                    'members': [[m.id, m.username, m.email] for i, m in enumerate(self.test_users[2: ]) if tid_list[1] % (i + 2) == 0], 
                 }, 
             ], 
         ]
@@ -529,8 +530,7 @@ class TeamListViewTestCase(TestCase):
                     if res_body['error_code'] == 0: 
                         self.assertEqual(data['team_name'], res_body['team_name'])
                         self.assertEqual(data['team_leader_id'], res_body['team_leader_id'])
-                        self.assertEqual(data['team_leader_id'], res_body['team_leader_id'])
-                        self.assertEqual(sorted(data['team_leader_id'], key=itemgetter(0)), sorted(res_body['team_leader_id'], key=itemgetter(0)))
+                        self.assertEqual(sorted(data['members'], key=lambda row: row[0]), sorted(res_body['members'], key=lambda row: row[0]))
         
     def test_admin_staff_edit_team_post(self): 
         uid_list = [0, 1]
@@ -802,17 +802,163 @@ class TeamDetailViewTestCase(TestCase):
         self.n_teams = len(self.test_teams)
         self.n_team_members = len(self.test_team_members)
         
+    def test_detail_view(self): 
+        # Admin check team 0 including all usres as members.
+        self.c.login(username=self.test_users[0].username, password='password')
+        resp = self.c.get(reverse('team_detail', args = [self.test_teams[0].id]))
+        self.assertTemplateUsed(resp, 'manage-team/team_detail.html')
+        data = resp.context
+        self.assertEqual(data["team_id"], self.test_teams[0].id) 
+        self.assertEqual(data["team_name"], self.test_teams[0].name)
+        self.assertEqual(data["team_leader_id"], -1)
+        self.assertEqual(len(data["not_members"]), 0) 
+        for i in range(2, self.n_users): 
+            self.assertTrue(TeamMember.get_by_team_members(team_id = self.test_teams[0].id, user_id = self.test_users[i].id) in data["members"])
+        
+        # User 2 check the team 3 (user 2 isn't in the team).   
+        self.c.login(username=self.test_users[2].username, password='password')
+        resp = self.c.get(reverse('team_detail', args = [self.test_teams[3].id]))
+        self.assertRaises(PermissionDenied)
+
+        # User 2 check the team 4 (user 2 is in the team).
+        self.c.login(username=self.test_users[2].username, password='password')
+        resp = self.c.get(reverse('team_detail', args = [self.test_teams[4].id]))
+        data = resp.context
+        self.assertEqual(data["team_id"], self.test_teams[4].id) 
+        self.assertEqual(data["team_name"], self.test_teams[4].name)
+        self.assertEqual(data["team_leader_id"], self.test_users[4].id)
+        for i in range(2, self.n_users): 
+            if 4 % i == 0:
+                self.assertTrue(TeamMember.get_by_team_members(team_id = self.test_teams[4].id, user_id = self.test_users[i].id) in data["members"])
+            else:
+                self.assertTrue(User.query(self.test_users[i].id) in data["not_members"])
+        self.assertEqual(len(data["members"]) + len(data["not_members"]), self.n_users - 2)
+        
     def test_admin_staff_leader_add_members(self): 
-        pass
+        tid = 4
+        team_id = self.test_teams[tid]
+        
+        post_req_body_list = [
+            # Missing selected_members
+            {},       
+            # Invalid member
+            {'selected_members': [self.test_users[i].id for i in [3, 1]]}, 
+            # Valid
+            {'selected_members': [self.test_users[i].id for i in[2, 3, 4, 4, 5]]}, 
+        ]
+        
+        post_res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_ADD_INVALID_MEMBER_CODE, 
+            0, 
+        ]
+        
+        self.c.login(username=self.test_users[0].username, password='password')
+        for req_body, res_code in zip(post_req_body_list, post_res_code_list):
+            resp = self.c.post(reverse('team_detail_update', args = [self.test_teams[tid].id]), json.dumps(req_body), content_type="application/json")
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
+            
+        self.assertNotEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[3].id), None)
+        self.assertNotEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[5].id), None)
+        self.assertEqual(TeamMember.get_team_members(team_id = team_id).count(), 4)
+        self.assertEqual(TeamMember.objects.all().count(), self.n_team_members + 2)
         
     def test_member_add_members(self): 
-        pass
+        tid = 4
+        self.c.login(username=self.test_users[2].username, password='password')
+        team_id = self.test_teams[tid]
+        req_body, res_code = {'selected_members': [self.test_users[i].id for i in [2, 3, 4, 4, 5]]}, ERR_LACK_OF_AUTHORITY_CODE
+        resp = self.c.post(reverse('team_detail_update', args = [self.test_teams[tid].id]), json.dumps(req_body), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], res_code)
     
     def test_admin_staff_delete_members(self): 
-        pass
+        tid = 4
+        team_id = self.test_teams[tid].id
+        
+        get_req_body_list = [
+            # Missing selected_members
+            {},       
+            # Not a member
+            {'id': TeamMember.get_by_team_members(team_id = self.test_teams[0].id, user_id = self.test_users[3].id).id}, 
+        ]
+        
+        get_res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE, 
+        ]
+        
+        self.c.login(username=self.test_users[0].username, password='password')
+        for req_body, res_code in zip(get_req_body_list, get_res_code_list):
+            resp = self.c.get(reverse('team_detail_delete', args = [team_id]), req_body)
+            data = json.loads(resp.content)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(data['error_code'], res_code)
+            
+        # Delete not a leader
+        req_body, res_code = {'id': TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[2].id).id}, 0
+        resp = self.c.get(reverse('team_detail_delete', args = [team_id]), req_body)
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], res_code)
+            
+        self.assertEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[2].id), None)
+        self.assertEqual(TeamMember.get_team_members(team_id = team_id).count(), 1)
+        self.assertEqual(TeamMember.objects.all().count(), self.n_team_members - 1)
+        
+        # Delete a leader
+        req_body, res_code = {'id': TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[4].id).id}, 0
+        resp = self.c.get(reverse('team_detail_delete', args = [team_id]), req_body)
+        data = json.loads(resp.content)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(data['error_code'], res_code)
+        
+        self.assertEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[4].id), None)
+        self.assertEqual(Team.query(self.test_teams[4].id).leader_id, None)
+        self.assertEqual(TeamMember.get_team_members(team_id = team_id).count(), 0)
+        self.assertEqual(TeamMember.objects.all().count(), self.n_team_members - 2)
         
     def test_leader_delete_members(self): 
-        pass
+        tid = 4
+        team_id = self.test_teams[tid]
+        
+        uid = 4 # leader
+        
+        post_req_body_list = [
+            # Missing selected_members
+            {},       
+            # Not a member
+            {'id': TeamMember.get_by_team_members(team_id = self.test_teams[0].id, user_id = self.test_users[3].id).id}, 
+            # Delete himself
+            {'id': TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[4].id).id}, 
+        ]
+        
+        post_res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE, 
+            ERR_LACK_OF_AUTHORITY_CODE, 
+        ]
+        
+        self.c.login(username=self.test_users[uid].username, password='password')
+        for req_body, res_code in zip(post_req_body_list, post_res_code_list):
+            resp = self.c.get(reverse('team_detail_delete', args = [self.test_teams[tid].id]), req_body)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
+            
+        # Delete not a leader
+        req_body, res_code = {'id': TeamMember.get_by_team_members(team_id = self.test_teams[tid].id, user_id =self.test_users[2].id).id}, 0
+        resp = self.c.get(reverse('team_detail_delete', args = [self.test_teams[tid].id]), req_body)
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], res_code)
+            
+        self.assertEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[2].id), None)
+        self.assertEqual(TeamMember.get_team_members(team_id = team_id).count(), 1)
+        self.assertEqual(TeamMember.objects.all().count(), self.n_team_members - 1)
     
     def test_member_delete_members(self):
         uid_list = [2, 3, 2]

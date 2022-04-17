@@ -33,5 +33,11 @@ ERR_LEADER_INVALID_CODE = 3006
 ERR_LEADER_INVALID_MSG = "The leader id is invalid."
 
 # Team detail errors
-ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE = 4001
+ERR_NO_TEAM_ACCESS_CODE = 4001
+ERR_NO_TEAM_ACCESS_MSG = "You have no access to the page."
+
+ERR_ADD_INVALID_MEMBER_CODE = 4002
+ERR_ADD_INVALID_MEMBER_MSG = "The new added member shouldn't be an admin or a staff."
+
+ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE = 4003
 ERR_NOT_A_MEMBER_OF_THE_TEAM_MSG = "Delete a member not in the team."
