@@ -106,18 +106,25 @@
                             <div class="ibox-content">
                                 <form role="form" id="reservation-form">
                                     <div class="form-group"><label>Title</label> <input type="text" class="form-control" id="reservation-title" placeholder="untitled"></div>
-                                    <div class="hr-line-dashed"></div>
-                                    <div class="form-group">
-                                        <label>Type</label> 
-                                        <select class="form-control m-b" id="reservation-type">
-                                            <option>closed</option>
-                                            <option>quiet</option>
-                                            <option selected="selected">open</option>
+                                   
+                                    <div class="form-group" id="is-making-noise-div">
+                                        <label>Will you make noise when using the space?</label> 
+                                        <select class="form-control m-b" id="is-making-noise">
+                                            <option>Yes</option>
+                                            <option selected="selected">No</option>
                                         </select>
                                     </div>
-                                    <div class="hr-line-dashed"></div>
+                                    
+                                    <div class="form-group" id="quiet-req-div">
+                                        <label>Do you need a reservation with a quiet environment?</label> 
+                                        <select class="form-control m-b" id="quiet-req">
+                                            <option>Yes</option>
+                                            <option selected="selected">No</option>
+                                        </select>
+                                    </div>
+                               
                                     <div class="form-group"><label>Description</label> <textarea class="form-control" rows="5" id="reservation-description"></textarea> </div>
-                                    <div class="hr-line-dashed"></div>
+
                                     <div class="form-group">
                                         <button class="btn btn-primary" type="submit" id="reservation-button">Submit</button>
                                         <button class="btn btn-white pull-right" type="reset" id="reservation-reset-button">Reset</button>
@@ -318,12 +325,8 @@
                         jQuery.each(data.results, function (i, item) {
                             
                             var color = color_green;
-                            if (item.reservation_type == 0) {
+                            if (item.reservation_type == {{resv_type_noisy}}) { // Noisy reservations
                                 color = color_danger;
-                            } else if (item.reservation_type == 1) {
-                                color = color_warn;
-                            } else if (item.reservation_type == 2) {
-                                color = color_green;
                             }
                             results.push({
                                 title: item.zone_name,
@@ -386,7 +389,9 @@
         
             var title = document.getElementById("reservation-title").value;
             title = title ? title : "untitled";
-            var reservation_type = document.getElementById("reservation-type").selectedIndex;
+            var making_noise = document.getElementById("is-making-noise").selectedIndex;
+            var quiet_req = 1;          // default is "No"(1)
+            var reservation_type = 3;   // default is "No"(1) + "No"(1) = 3 (11)
             var description = document.getElementById("reservation-description").value;
             
             var reservations = $('#calendar').fullCalendar( 'clientEvents', function(event) {
@@ -443,6 +448,16 @@
             
             // return;
             
+            // Get reservation type
+            // 0: not valid 
+            // 1: not making noise + require quietness
+            // 2: making noise
+            // 3: not making noise + not require quietness
+            if (making_noise == 1) {
+                quiet_req = document.getElementById("quiet-req").selectedIndex;
+            }
+            reservation_type = (quiet_req << 1) + making_noise;
+            
             var user_id = 1;
             var ret = true;
             
@@ -450,7 +465,9 @@
 		        return false;
 			}
             
+            var warning = false;
             $.ajax({
+                async: false,
                 url: '{% url "reservation_create" %}',
                 type: "POST",
                 data: JSON.stringify({ 
@@ -462,13 +479,16 @@
                     start_time: start_time, 
                     end_time: end_time, 
                     user_id: user_id,
-                    is_long_term: reservation.allDay
+                    is_long_term: reservation.allDay,
+                    ignore_warning: false,
                 }),
                 success: function(data) {
                     console.log(data);
                     if (data.error_code == 0) {
                         alert("SUCCESS");
                         ret = true;
+                    } else if (data.error_code == {{warning_code}}) { // Quietness warning
+                        warning = true;
                     } else {
                         alert("Oops! We have encountered an error " + data.error_msg + "!");
                         ret = false;
@@ -476,9 +496,64 @@
                 },
             });
         
+            if (warning) {
+                if(!confirm('WARN: There is already another reservation that might be noisy on the time you selected, would you like to continue to make the reservation?')){
+    		        return false;
+    			} else {
+    			    $.ajax({
+    			        async: false,
+                        url: '{% url "reservation_create" %}',
+                        type: "POST",
+                        data: JSON.stringify({ 
+                            title: title,  
+                            reservation_type: reservation_type, 
+                            description: description, 
+                            zone_id: zone_id, 
+                            zone_name: zone_name,
+                            start_time: start_time, 
+                            end_time: end_time, 
+                            user_id: user_id,
+                            is_long_term: reservation.allDay,
+                            ignore_warning: true,
+                        }),
+                        success: function(data) {
+                            console.log(data);
+                            if (data.error_code == 0) {
+                                alert("SUCCESS");
+                                ret = true;
+                            } else {
+                                alert("Oops! We have encountered an error " + data.error_msg + "!");
+                                ret = false;
+                            }
+                        },
+                    });
+    			}
+            }
+        
             return ret;
         });
 
+        // Reservation form option variations
+        $('#is-making-noise').change(function(){
+            var making_noise = document.getElementById("is-making-noise");
+            var making_noise_div = document.getElementById("is-making-noise-div");
+            
+            if(making_noise.selectedIndex == 1) {   // Not making noise
+                // Ask if it requires quite reservation
+                making_noise_div.insertAdjacentHTML("afterend",
+                '\
+                    <div class="form-group" id="quiet-req-div">\
+                        <label>Do you need a reservation with a quiet environment?</label> \
+                        <select class="form-control m-b" id="quiet-req">\
+                            <option>Yes</option>\
+                            <option selected="selected">No</option>\
+                        </select>\
+                    </div>\
+                ');
+            } else if (making_noise.selectedIndex == 0) {   // Makeing noise
+                document.getElementById("quiet-req-div").remove();
+            }
+        })
     </script>
 
 </body>

@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse,HttpResponseRedirect
 from django.template import loader
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import PermissionDenied
 
 import json
 from django.utils.dateparse import parse_datetime
@@ -21,6 +22,10 @@ def index(request):
     zone_list = Zone.list_all()
     return render(request, "index.html", {
         "zone_list": zone_list,
+        "warning_code": WARNING_RESERVATION_CONFLICT_CODE,
+        "resv_type_req_quiet": RESV_TYPE_REQ_QUIET,
+        "resv_type_noisy": RESV_TYPE_NOISY,
+        "resv_type_not_req_quiet": RESV_TYPE_NOT_REQ_QUIET,
     })
 
 @login_required
@@ -136,7 +141,7 @@ def reservation_create(request):
             params = json.loads(request.body)
             #print(params)
             # Check required fields
-            if 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
+            if 'ignore_warning' not in params or 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
@@ -153,10 +158,16 @@ def reservation_create(request):
                 })
                 
             # Check conflicts
-            if reservation.has_confliction():
+            conflict, warning = reservation.has_confliction()
+            if conflict:
                 return JsonResponse({
                     "error_code": ERR_RESERVATION_CONFLICT_CODE,
                     "error_msg": ERR_RESERVATION_CONFLICT_MSG
+                })
+            elif warning and not params['ignore_warning']:
+                return JsonResponse({
+                    "error_code": WARNING_RESERVATION_CONFLICT_CODE,
+                    "error_msg": WARNING_RESERVATION_CONFLICT_MSG,
                 })
 
             # Create reservation
@@ -475,6 +486,8 @@ def team_view_update(request):
 # Team details
 # Show all team members.
 def team_detail(request, team_id):
+    if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF) and TeamMember.get_by_team_members(team_id = team_id, user_id = request.user.id) == None: 
+        raise PermissionDenied
     members = TeamMember.get_team_members(team_id)
     not_members = User.list_not_members(team_id)
     team = Team.query(team_id)
@@ -511,6 +524,16 @@ def team_detail_update(request, team_id):
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 })
+                
+            for user_id in params['selected_members']:
+                # If there's no such a user, it will throw an exception.
+                user = User.query(user_id)
+                # The role of new added members shouldn't be admin or staff.
+                if user.role_id.id in (ROLE_ADMIN, ROLE_STAFF):
+                    return JsonResponse({
+                        "error_code": ERR_ADD_INVALID_MEMBER_CODE, 
+                        "error_msg": ERR_ADD_INVALID_MEMBER_MSG, 
+                    })
                 
             for user_id in params['selected_members']:
                 TeamMember.objects.get_or_create(user_id = User.query(user_id), team_id = Team.query(team_id))
