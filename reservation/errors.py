@@ -13,6 +13,11 @@ ERR_VALUE_ERROR_MSG = "Field value error"
 ERR_RESERVATION_CONFLICT_CODE = 2001
 ERR_RESERVATION_CONFLICT_MSG = "Conflit with existing reservations"
 
+# Quietness warning code
+# Do not change this code unless you make sure you change the warning check in the templates/index.html as well
+WARNING_RESERVATION_CONFLICT_CODE = 12000
+WARNING_RESERVATION_CONFLICT_MSG = "Warning: New reservation has conflition with existing reservations on quietness option"
+
 # Team list errors
 ERR_LACK_OF_AUTHORITY_CODE = 3001
 ERR_LACK_OF_AUTHORITY_MSG = "Lack of authority to do this action."

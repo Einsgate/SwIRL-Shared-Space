@@ -22,6 +22,10 @@ def index(request):
     zone_list = Zone.list_all()
     return render(request, "index.html", {
         "zone_list": zone_list,
+        "warning_code": WARNING_RESERVATION_CONFLICT_CODE,
+        "resv_type_req_quiet": RESV_TYPE_REQ_QUIET,
+        "resv_type_noisy": RESV_TYPE_NOISY,
+        "resv_type_not_req_quiet": RESV_TYPE_NOT_REQ_QUIET,
     })
 
 @login_required
@@ -137,7 +141,7 @@ def reservation_create(request):
             params = json.loads(request.body)
             #print(params)
             # Check required fields
-            if 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
+            if 'ignore_warning' not in params or 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
@@ -154,10 +158,16 @@ def reservation_create(request):
                 })
                 
             # Check conflicts
-            if reservation.has_confliction():
+            conflict, warning = reservation.has_confliction()
+            if conflict:
                 return JsonResponse({
                     "error_code": ERR_RESERVATION_CONFLICT_CODE,
                     "error_msg": ERR_RESERVATION_CONFLICT_MSG
+                })
+            elif warning and not params['ignore_warning']:
+                return JsonResponse({
+                    "error_code": WARNING_RESERVATION_CONFLICT_CODE,
+                    "error_msg": WARNING_RESERVATION_CONFLICT_MSG,
                 })
 
             # Create reservation

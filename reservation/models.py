@@ -20,20 +20,28 @@ class Reservation(models.Model):
     reservation_type = models.IntegerField()
     
     def is_valid(self):
-        if self.reservation_type < 0 or self.reservation_type > 2 or not self.start_time or not self.end_time or self.start_time >= self.end_time or self.user_id != 1:
+        if self.reservation_type <= 0 or self.reservation_type > 3 or not self.start_time or not self.end_time or self.start_time >= self.end_time or self.user_id != 1:
             return False
         else:
             return True
             
     def has_confliction(self):
         # Find all reservations that 
-        # start_time < self.end_time AND end_time > self.start_time AND (zone_id = self.zone_id OR reservation_type != self.reservation_type)
+        # start_time < self.end_time AND end_time > self.start_time AND zone_id = self.zone_id 
         conflict_reservations = Reservation.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time), 
-            Q(zone_id__exact = self.zone_id) | ~Q(reservation_type = self.reservation_type))
-        if len(conflict_reservations) > 0:
-            return True
+            Q(zone_id__exact = self.zone_id))
+        conflict = len(conflict_reservations) > 0
+            
+        # For those reservations that break the quietness requirement, return a warning back
+        if self.reservation_type == RESV_TYPE_REQ_QUIET: # Only check when the reservation require a quiet environment
+            # Query those overlapped noisy reservations
+            conflict_on_quiet_reservations = Reservation.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time), 
+                Q(reservation_type__exact = RESV_TYPE_NOISY))
+            warning = len(conflict_on_quiet_reservations) > 0
         else:
-            return False    
+            warning = False
+        
+        return conflict, warning  
             
     @staticmethod
     def list_all(user_id = 0):

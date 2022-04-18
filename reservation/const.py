@@ -4,3 +4,9 @@ ROLE_ADMIN  = 0
 ROLE_STAFF  = 1
 ROLE_LEAD   = 2
 ROLE_MEMBER = 3
+
+
+## Reservation type
+RESV_TYPE_REQ_QUIET     = 1
+RESV_TYPE_NOISY         = 2
+RESV_TYPE_NOT_REQ_QUIET = 3
