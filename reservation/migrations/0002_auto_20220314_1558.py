@@ -63,6 +63,21 @@ def init(apps, schema_editor):
     TeamMember.objects.create(team_id = team1, user_id = test_member_2)
     TeamMember.objects.create(team_id = team1, user_id = test_member_3)
 
+    #leftNav
+    LeftNav.objects.create(id = 1, name = "Home", url = "index", fid=0, description = "")
+    LeftNav.objects.create(id = 2, name = "Staff Management", url = "/usermng/staff", fid=1, description = "")
+    LeftNav.objects.create(id = 3, name = "Authorization", url = "/usermng/authUser", fid=1, description = "")
+    LeftNav.objects.create(id = 4, name = "Make Reservations", url = "index", fid=3, description = "")
+    LeftNav.objects.create(id = 5, name = "Reservation History", url = "/reservation/history", fid=3, description = "")
+    LeftNav.objects.create(id = 6, name = "Overall", url = "statOverall", fid=2, description = "")
+    LeftNav.objects.create(id = 7, name = "Reserve Statistics", url = "statReserve", fid=2, description = "")
+    LeftNav.objects.create(id = 8, name = "Training Statistics", url = "statTraining", fid=2, description = "")
+    LeftNav.objects.create(id = 9, name = "Register Statistics", url = "statRegister", fid=2, description = "")
+    LeftNav.objects.create(id = 10, name = "Team Management", url = "/team/view", fid=4, description = "")
+    LeftNav.objects.create(id = 11, name = "My Teams", url = "/team/view", fid=4, description = "")
+    LeftNav.objects.create(id = 12, name = "Training Management", url = "/training/view", fid=5, description = "")
+    LeftNav.objects.create(id = 13, name = "Registered Training", url = "/training/apply/myTrainning", fid=5, description = "")
+    LeftNav.objects.create(id = 14, name = "Training Registration", url = "/training/apply", fid=5, description = "")
 
 class Migration(migrations.Migration):
 

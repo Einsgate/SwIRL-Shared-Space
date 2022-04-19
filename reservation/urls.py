@@ -19,7 +19,7 @@ urlpatterns = [
     path('usermng/authUserUpdate', views.authority_update, name='authority_update'),
 
     #reservation
-    path('reservation/index', views.index, name='reservation_index'),
+    path('reservation/index', views.reservation_index, name='reservation_index'),
     path('reservation/index.html', views.index, name='reservation_index_html'),
     path('reservation/list', views.reservation_list, name='reservation_list'),
     path('reservation/history', views.reservation_history, name='reservation_history'),  

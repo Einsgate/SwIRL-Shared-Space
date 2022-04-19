@@ -20,6 +20,27 @@ from django.core.mail import send_mail
 @login_required
 def index(request):
     zone_list = Zone.list_all()
+
+    left_nav = LeftNav.findById(1)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
+    return render(request, "index.html", {
+        "zone_list": zone_list,
+        "warning_code": WARNING_RESERVATION_CONFLICT_CODE,
+        "resv_type_req_quiet": RESV_TYPE_REQ_QUIET,
+        "resv_type_noisy": RESV_TYPE_NOISY,
+        "resv_type_not_req_quiet": RESV_TYPE_NOT_REQ_QUIET,
+    })
+
+@login_required
+def reservation_index(request):
+    zone_list = Zone.list_all()
+
+    left_nav = LeftNav.findById(4)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
     return render(request, "index.html", {
         "zone_list": zone_list,
         "warning_code": WARNING_RESERVATION_CONFLICT_CODE,
@@ -31,6 +52,11 @@ def index(request):
 @login_required
 def usermng_staff(request):
     staff_list = User.list_staff(ROLE_STAFF)
+
+    left_nav = LeftNav.findById(2)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
     return render(request, "staff_index.html", {
         "staff_list": staff_list,
     })
@@ -106,6 +132,11 @@ def authority_update(request):
 def authority_user(request):
     all_user = User.list_all(0)
     team_list = Team.list_all(0)
+
+    left_nav = LeftNav.findById(3)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
     if request.method == 'GET':
         params = request.GET
 
@@ -184,6 +215,11 @@ def reservation_create(request):
 
 def reservation_history(request):
     reservations = Reservation.list_all(0)
+
+    left_nav = LeftNav.findById(5)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
     return render(request, "reservation_history.html", {
        "reservations": reservations,
     })
@@ -268,11 +304,17 @@ def team_view(request):
         if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
             users = User.list_not_admin_staff()
             teams = Team.list_all()
-            team_list_title = 'Team List'
+            team_list_title = 'Team Management'
+            left_nav = LeftNav.findById(10)
         else:
             users = []
             teams = Team.list_all(request.user.id)
             team_list_title = 'My Teams'
+            left_nav = LeftNav.findById(11)
+
+        request.session['fid'] = left_nav.fid
+        request.session['cid'] = left_nav.id
+    
         return render(request, "manage-team/team_list.html", {
             "users": users, 
             "teams": teams,
@@ -590,10 +632,17 @@ def team_detail_delete(request, team_id):
 @login_required
 def training_view(request):
     if request.method == 'GET':
+        left_nav = LeftNav.findById(12)
+        request.session['fid'] = left_nav.fid
+        request.session['cid'] = left_nav.id
+
         if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
             training = Training.list_all()
-            training_list_title = 'Training List'
+            training_list_title = 'Training Management'
+        zone_list = Zone.list_all()
+
         return render(request, "training_list.html", {
+            "zone_list": zone_list,
             "training": training,
             "training_list_title": training_list_title,
         })
@@ -660,6 +709,8 @@ def training_update(request):
         training = Training.findById(params['id'])
         training.training_status = 2
         training.save()
+        #update details
+        TrainingDetail.updateByTrainingId(training.id, 2)
 
         return JsonResponse({
             "error_code": 0,
@@ -671,13 +722,14 @@ def training_create(request):
         if request.method == 'POST':
             # Check required fields
             params = json.loads(request.body)
-
             if 'name' not in params or 'startDate' not in params or 'endDate' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
                 });
-            training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id =0, instructor_id = 0)
+
+            zone = Zone.findById(params['zoneId'])
+            training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id =zone, instructor_id = 0)
             training.save()
             return JsonResponse({
                 "error_code": 0,
@@ -686,8 +738,7 @@ def training_create(request):
                 "training_description": training.description,
                 "training_instructor_id": training.instructor_id,
                 "training_start_time": training.start_time,
-                "training_end_time": training.end_time,
-                "training_zone_id": training.zone_id
+                "training_end_time": training.end_time
             })
     except Exception as e:
         return JsonResponse({
@@ -712,12 +763,16 @@ def training_apply(request):
     else:
         training_list = Training.list_exception(oldIds);
 
-    my_training_list_title = 'Training Apply'
+    my_training_list_title = 'Training Registration'
     training_name = ""
 
     for r in training_list:
         training_name += r.name+","
-
+    
+    left_nav = LeftNav.findById(14)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+    
     return render(request, "training_apply.html", {
         "key_word": key_word,
         "training_list": training_list,
@@ -728,7 +783,10 @@ def training_apply(request):
 @login_required
 def training_my_training(request):
     training = TrainingDetail.list_all(request.user.id)
-    training_list_title = 'My Training List'
+    training_list_title = 'Registered Training'
+    left_nav = LeftNav.findById(13)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
     return render(request, "training_my_training.html", {
         "training_list": training,
         "training_list_title": training_list_title,

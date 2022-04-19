@@ -21,16 +21,19 @@
 	        {% include 'common/logout.html' %}
 	        <div class="row wrapper border-bottom white-bg page-heading">
 	            <div class="col-lg-10">
-	                <h2>Authority Detail</h2>
+	                <h2>Authorization Detail</h2>
 	                <ol class="breadcrumb">
 	                    <li>
-	                        <a href="index.html">Home</a>
+	                        <a href='{% url "index" %}'>Home</a>
 	                    </li>
 	                    <li>
-	                        <a>Staff Management</a>
+	                        Users
+	                    </li>
+	                    <li>
+	                        <a href='{% url "authority_user" %}'>Authorization</a>
 	                    </li>
 	                    <li class="active">
-	                        <strong>Authority Detail</strong>
+	                        <strong>Authorization Detail</strong>
 	                    </li>
 	                </ol>
 	            </div>

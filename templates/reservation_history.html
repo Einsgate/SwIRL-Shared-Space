@@ -20,7 +20,6 @@
     <div id="wrapper">
 		{% include 'common/nav.html' %}
         <div id="page-wrapper" class="gray-bg">
-
         {% include 'common/logout.html' %}
         
         <div class="row wrapper border-bottom white-bg page-heading">
@@ -28,10 +27,10 @@
                 <h2>Reservation History</h2>
                 <ol class="breadcrumb">
                     <li>
-                        <a href="index.html">Home</a>
+                        <a href='{% url "index" %}'>Home</a>
                     </li>
                     <li>
-                        <a>Reservation Management</a>
+                        Reservation
                     </li>
                     <li class="active">
                         <strong>Reservation History</strong>
@@ -81,8 +80,6 @@
 	                                    <th data-hide="phone">Title</th>
 	                                    <th data-hide="all">Description</th>
 	                                    <th data-hide="phone">Type</th>
-	                                    <th data-hide="phone">Is Long-Term</th>
-	                                    <!--<th data-hide="phone">Status</th>-->
 	                                    <th data-hide="phone">Start Time</th>
 	                                    <th data-hide="phone">End Time</th>
 	                                    <th class="text-right">Action</th>
@@ -104,13 +101,6 @@
 	                                        <span class="label label-primary"> Open </span>
                                         {% endif %}
 	                                       </td>
-	                                    <td>
-	                                    {% if reserve.is_long_term %}
-	                                    	Long Term
-	                                    {% else %}
-	                                    	Short Term
-	                                    {% endif %}
-	                                    </td>
 	                                    <!--<td>-->
 	                                    <!--	{% if reserve.status %}-->
 	                                    <!--    <span class="label label-primary"> Normal </span>-->
@@ -162,10 +152,8 @@
 
     <!-- Data picker -->
     <script src="/static/js/plugins/datapicker/bootstrap-datepicker.js"></script>
-
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-
     <!-- Sweet alert -->
     <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
 
@@ -181,7 +169,7 @@
                 confirmButtonText: "Yes, DELETE it!",
                 cancelButtonText: "No, Cancel !",
                 closeOnConfirm: false,
-                closeOnCancel: false },
+                closeOnCancel: true },
             function (isConfirm) {
                 if (isConfirm) {
     		        $.ajax({
@@ -189,15 +177,20 @@
     		            data:{id: id},
                         type: "GET",
     		            success:function(msg){
-    		            	$(location).attr('href','{% url "reservation_history" %}');
+		                	swal({
+	                            title:"Deleted",
+	                            text: "Your record has been DELETED",
+	                            type: "success",
+	                            confirmButtonText: "Confirm",
+	                        }, function () {
+	                            window.location.reload();
+	                            ret = true;
+	                        });
     		            },
     		            error:function(xhr,textstatus,thrown){
     		            }
     		        });
-                	swal("Deleted!", "Your record has been DELETED.", "success");
     		        return true;
-                } else {
-                    swal("Cancelled", "Your record is safe :)", "error");
                 }
             });
 		}

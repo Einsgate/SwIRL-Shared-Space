@@ -21,16 +21,16 @@
 	        {% include 'common/logout.html' %}
 	        <div class="row wrapper border-bottom white-bg page-heading">
 	            <div class="col-lg-10">
-	                <h2>Authority User</h2>
+	                <h2>Authorization</h2>
 	                <ol class="breadcrumb">
 	                    <li>
 	                        <a href="index.html">Home</a>
 	                    </li>
 	                    <li>
-	                        <a>Staff Management</a>
+	                        <a>Users</a>
 	                    </li>
 	                    <li class="active">
-	                        <strong>Authority User</strong>
+	                        <strong>Authorization</strong>
 	                    </li>
 	                </ol>
 	            </div>
@@ -47,7 +47,7 @@
 		                    <div class="ibox float-e-margins">
 		                        <div class="ibox-content">
 		                            <p>
-		                                Search By Email <span class="text-muted">(type 'email')</span>
+		                                Search By Email <span class="text-muted"></span>
 		                            </p>
 		                            <form id="user_search" action="{% url 'authority_user' %}">
 										<div class="input-group"><input type="text" name="keyWord" id="keyWord" value="{{key_word}}" placeholder="email..." class="typeahead_1 form-control">
@@ -73,7 +73,7 @@
 		                                    <th data-hide="phone">Staff Name</th>
 		                                    <th data-hide="phone">Role </th>
 		                                    <th data-hide="phone">Email</th>
-		                                    <th data-hide="phone">Join Time</th>
+		                                    <th data-hide="phone">Created At</th>
 		                                    <th data-hide="phone">Last Login</th>
 		                                    <th class="text-right">Action</th>
 		                                </tr>
@@ -89,7 +89,7 @@
 		                                    <td>{{ul.last_login}}</td>
 		                                    <td class="text-right">
 		                                        <div class="btn-group">
-		                                        	<button id="authSubmit" onclick="window.location.href='authUserDetail/{{ul.id}}/' " class="btn btn-success btn-sm authSubmit">Authority</button>
+		                                        	<button id="authSubmit" onclick="window.location.href='authUserDetail/{{ul.id}}/' " class="btn btn-success btn-sm authSubmit">Authorize</button>
 		                                        </div>
 		                                        <div class="btn-group">
 		                                            <button id="deleteSubmit" onclick="deleteItem('{{ul.id}}')" class="btn btn-danger btn-sm deleteSubmit">Delete</button>
@@ -157,23 +157,27 @@
                 confirmButtonText: "Yes, DELETE it!",
                 cancelButtonText: "No, Cancel !",
                 closeOnConfirm: false,
-                closeOnCancel: false },
+                closeOnCancel: true },
             function (isConfirm) {
        			if(isConfirm){
        		        $.ajax({
        		            url:'{% url "user_delete" %}',
        		            data:{id: id, role_id: role_id},
-                           type: "GET",
+                        type: "GET",
        		            success:function(msg){
-       		            	$(location).attr('href','{% url "authority_user" %}');
+		                	swal({
+	                            title:"Delete Success",
+	                            text: "User has been DELETED",
+	                            type: "success",
+	                            confirmButtonText: "Confirm",
+	                        }, function () {
+	                            window.location.reload();
+	                        });
        		            },
        		            error:function(xhr,textstatus,thrown){
        		            }
        		        });
-       		        return true;
-       			} else {
-                   swal("Cancelled", "Your record is safe :)", "error");
-                }
+       			}
             });
 		}
 

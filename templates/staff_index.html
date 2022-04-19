@@ -18,21 +18,19 @@
     <div id="wrapper">
 		{% include 'common/nav.html' %}
         <div id="page-wrapper" class="gray-bg">
-	
 	        {% include 'common/logout.html' %}
-	        
 	        <div class="row wrapper border-bottom white-bg page-heading">
 	            <div class="col-lg-10">
-	                <h2>Staff Index</h2>
+	                <h2>Staff Management</h2>
 	                <ol class="breadcrumb">
 	                    <li>
-	                        <a href="index.html">Home</a>
+	                        <a href='{% url "index" %}'>Home</a>
 	                    </li>
 	                    <li>
-	                        <a>Staff Management</a>
+	                        Users
 	                    </li>
 	                    <li class="active">
-	                        <strong>Staff Index</strong>
+	                        <strong>Staff Management</strong>
 	                    </li>
 	                </ol>
 	            </div>
@@ -74,9 +72,8 @@
 	                            <table class="footable table table-stripped toggle-arrow-tiny" data-page-size="15">
 	                                <thead>
 		                                <tr>
-		                                    <th data-toggle="true">ID</th>
 		                                    <th data-hide="phone">Staff Name</th>
-		                                    <th data-hide="all">Email</th>
+		                                    <th data-hide="phone">Email</th>
 		                                    <th data-hide="phone">Join Time</th>
 		                                    <th data-hide="phone">Last Login</th>
 		                                    <th class="text-right">Action</th>
@@ -85,7 +82,6 @@
 	                                <tbody id="reserveList">
 	                                	{% for staff in staff_list %}  
 		                                <tr id="userId_{{staff.id}}">
-		                                    <td>{{staff.id}}</td>
 		                                    <td>{{staff.username}}</td>
 		                                    <td>{{staff.email}}</td>
 		                                    <td>{{staff.date_joined}}</td>
@@ -131,7 +127,6 @@
 
     <!-- Sweet alert -->
     <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
-
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
 
@@ -147,7 +142,7 @@
                 confirmButtonText: "Yes, Do it!",
                 cancelButtonText: "No, Cancel!",
                 closeOnConfirm: false,
-                closeOnCancel: false },
+                closeOnCancel: true },
             function (isConfirm) {
            		if(isConfirm){
            	        $.ajax({
@@ -155,14 +150,18 @@
            	            data:{userId: id, roleId: 3},
                         type: "GET",
            	            success:function(msg){
-           	            	$(location).attr('href','{% url "staff_index" %}');
+                            swal({
+                                title:"Deleted",
+                                text: "Your record has been DELETED",
+                                type: "success",
+                                confirmButtonText: "Confirm",
+                            }, function () {
+                                window.location.reload();
+                            });
            	            },
            	            error:function(xhr,textstatus,thrown){
            	            }
            	        });
-           	        //swal("Deleted!", "Your record has been DELETED.", "success");
-           		}else{
-           			swal("Cancelled", "Your record is safe :)", "error");
            		}
             });
 		}
