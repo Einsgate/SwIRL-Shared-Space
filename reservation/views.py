@@ -416,10 +416,11 @@ def team_view_delete(request):
             "error_code": 0,
         })        
 
-# update the name and leader of a team
+# update the name and leader of a team (admin or staff)
 @csrf_exempt
 def team_view_update(request):
     try:
+        # Generate the member list. This is to generate the select options where a new leader can be chosen from.
         if request.method == 'GET':
             # Check the authority
             if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
@@ -453,7 +454,9 @@ def team_view_update(request):
                 "members": teammembers_user_id, 
             });
 
+        # This is to change the name and the leader of some team.
         if request.method == 'POST':
+            # Check the authority
             if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
                 return JsonResponse({
                     "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
@@ -470,7 +473,7 @@ def team_view_update(request):
             team = Team.query(params['team_id']);
             updated = False; 
             
-            # update the team name
+            # Update the team name
             new_team_name = params['team_name']
             # If the team_name is empty, it won't report error and keep the name unchanged. 
             if len(new_team_name) == 0:
@@ -479,18 +482,18 @@ def team_view_update(request):
                 updated = True
                 team.name = new_team_name
 
-            # update the leader
+            # Update the leader
             new_team_leader_id = -1 if len(params['team_leader_id']) == 0 else int(params['team_leader_id']) 
             new_team_leader_username = ''
             
             if ~new_team_leader_id: 
-                # If the leader_id is an invalud number, it'll 
+                # If the leader_id is an invalud number, it'll throw an exception at User.query.
                 new_team_leader = User.query(new_team_leader_id)
-                if new_team_leader == None:
-                    return JsonResponse({
-                        "error_code": ERR_LEADER_INVALID_CODE, 
-                        "error_msg": ERR_LEADER_INVALID_MSG, 
-                    });
+                # if new_team_leader == None:
+                #     return JsonResponse({
+                #         "error_code": ERR_LEADER_INVALID_CODE, 
+                #         "error_msg": ERR_LEADER_INVALID_MSG, 
+                #     });
                     
                 # The leader can't be a user not in this team
                 if TeamMember.get_by_team_members(team_id = team.id, user_id = new_team_leader_id) == None:
@@ -504,12 +507,12 @@ def team_view_update(request):
                     updated = True
                     team.leader_id = new_team_leader
             else:
-                # If the team_leader_id is empty, it won't report error and keep the leader_id unchanged. 
+                # If the team_leader.id isn't empty, it won't report error and keep the leader_id unchanged. 
                 if team.leader_id != None:
                     new_team_leader_id = team.leader_id.id
                     new_team_leader_username = team.leader_id.username
 
-            # update the database only if some field has been changed
+            # Update the database only if some field has been changed
             if updated:
                 team.save();
 
@@ -519,18 +522,21 @@ def team_view_update(request):
                 "new_team_leader_username": new_team_leader_username, 
             });
     except Exception as e:
-        # print(str(e))
         return JsonResponse({
             "error_code": ERR_INTERNAL_ERROR_CODE,
             "error_msg": str(e),
         })
 
 # Team details
-# Show all team members.
+# Show all team members. (admin or staff or team members)
 def team_detail(request, team_id):
+    # Check whether request.user is a super user or some member in the team
     if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF) and TeamMember.get_by_team_members(team_id = team_id, user_id = request.user.id) == None: 
         raise PermissionDenied
+        
+    # Display all members in the team.
     members = TeamMember.get_team_members(team_id)
+    # Display all users neither super users nor members of the team in the member invitation list.
     not_members = User.list_not_members(team_id)
     team = Team.query(team_id)
     team_name = team.name
@@ -570,13 +576,14 @@ def team_detail_update(request, team_id):
             for user_id in params['selected_members']:
                 # If there's no such a user, it will throw an exception.
                 user = User.query(user_id)
-                # The role of new added members shouldn't be admin or staff.
+                # The role of new added members shouldn't be super users.
                 if user.role_id.id in (ROLE_ADMIN, ROLE_STAFF):
                     return JsonResponse({
                         "error_code": ERR_ADD_INVALID_MEMBER_CODE, 
                         "error_msg": ERR_ADD_INVALID_MEMBER_MSG, 
                     })
                 
+            # Although there might be duplicated or existing users in the list, we only add them once and only if they are currently not in the team.
             for user_id in params['selected_members']:
                 TeamMember.objects.get_or_create(user_id = User.query(user_id), team_id = Team.query(team_id))
                 
@@ -587,6 +594,7 @@ def team_detail_update(request, team_id):
             "error_msg": str(e),
         })
 
+# Delete a member in the team (admin or staff or the team leader)
 @csrf_exempt  
 def team_detail_delete(request, team_id): 
     if request.method == 'GET':
