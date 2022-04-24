@@ -18,7 +18,7 @@
                         Team leader
                     </label>
                     <div>
-                        <select data-placeholder="Please enter the username or email..." class="chosen-select" tabindex="2" style="width:350px;">
+                        <select data-placeholder="Enter username or email..." class="chosen-select" tabindex="2" style="width:350px;">
                             <option />
                             {% for user in users %}
                                 <option value={{user.id}}>{{user.username}} ({{user.email}})</option>

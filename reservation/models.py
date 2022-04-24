@@ -70,6 +70,20 @@ class Role(models.Model):
     def findById(id = 0):
         return Role.objects.filter(id = id).first()
 
+class Zone(models.Model):
+    #id = models.IntegerField(primary_key = True, blank=True)
+    name = models.CharField(max_length = 50, default = "noname")
+    is_noisy = models.BooleanField(default = False)
+    description = models.CharField(max_length = 500, default = "")
+    zone_type = models.IntegerField(default = 1)
+    
+    @staticmethod
+    def list_all():
+        return Zone.objects.all().order_by("id")
+    @staticmethod
+    def findById(id = 0):
+        return Zone.objects.filter(id = id).first()
+
 class User(AbstractUser):
     #role_id = models.IntegerField(default = 3)
     role_id = models.ForeignKey('Role', on_delete = models.CASCADE, default = 3)
@@ -161,7 +175,7 @@ class Training(models.Model):
     end_time = models.DateTimeField()
     #0: not start, 1: processing, 2: finished, 3: graded
     training_status = models.IntegerField(default = 0)
-    zone_id = models.IntegerField()
+    zone_id = models.ForeignKey('Zone', on_delete = models.CASCADE)
 
     @staticmethod
     def list_all(user_id = 0):
@@ -220,13 +234,20 @@ class TrainingDetail(models.Model):
     def delete(id = 0):
         TrainingDetail.objects.filter(id = id).delete()
 
-class Zone(models.Model):
+    @staticmethod
+    def updateByTrainingId(tid, status):
+        TrainingDetail.objects.filter(training_id = tid).update(training_status = status)
+
+class LeftNav(models.Model):
     #id = models.IntegerField(primary_key = True, blank=True)
     name = models.CharField(max_length = 50, default = "noname")
-    is_noisy = models.BooleanField(default = False)
+    url = models.CharField(max_length = 250, default = "url")
+    fid = models.IntegerField(default = 1)
     description = models.CharField(max_length = 500, default = "")
-    zone_type = models.IntegerField(default = 1)
-    
+
     @staticmethod
     def list_all():
-        return Zone.objects.all().order_by("id")
+        return LeftNav.objects.all().order_by("id")
+    @staticmethod
+    def findById(id):
+        return LeftNav.objects.filter(id = id).first()

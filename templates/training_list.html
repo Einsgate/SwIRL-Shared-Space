@@ -27,7 +27,10 @@
                 <h2>{{ training_list_title }}</h2>
                 <ol class="breadcrumb">
                     <li>
-                        <a href="/index.html">Home</a>
+                        <a href='{% url "index" %}'>Home</a>
+                    </li>
+                    <li>
+                        Training
                     </li>
                     <li class="active">
                         <strong>{{ training_list_title }}</strong>
@@ -48,6 +51,7 @@
                                 <thead>
 	                                <tr>
 	                                    <th data-hide="phone">Training</th>
+	                                    <th data-hide="phone">Zone</th>
 	                                    <th data-hide="all">Description</th>
 	                                    <th data-hide="phone">Start Time</th>
 	                                    <th data-hide="phone">End Time</th>
@@ -59,16 +63,17 @@
                                 	{% for t in training %}  
 	                                <tr id="instructor_id_{{t.id}}">
 	                                    <td><a href="trainingResult/{{t.id}}">{{t.name}}</a></td>
+	                                    <td>{{t.zone_id.name}}</td>
 	                                    <td>{{t.description}}</td>
 	                                    <td>{{t.start_time}}</td>
 	                                    <td>{{t.end_time}}</td>
 	                                    <td>
 	                                    {% if t.training_status == 2 %}
-	                                    	<span class="label label-primary"> Finished </span>
+	                                    	<span class="label label-primary">Finished</span>
 	                                    {% elif t.training_status == 3 %}
 	                                    	<span class="label label-warning"> Graded </span>
 	                                   	{% else %}
-	                                   		<span class="label label-success"> Processing </span>
+	                                   		<span class="label label-success">In progress</span>
 	                                    {% endif %}
 	                                    </td>
 	                                    <td class="text-right">
@@ -140,7 +145,13 @@
 			                                   <span class="input-group-addon"><i class="fa fa-calendar"></i></span><input type="text" id='endDate' class="form-control" value="">
 			                               </div>
 			                           </div>
-
+									   <div class="form-group" id="endTime">
+				                        <select class="form-control m-b" name="zoneId" id="zoneId">
+				                          {% for zl in zone_list %}
+										  <option value="{{zl.id}}" >{{zl.name}}</option>
+										  {% endfor %}
+										</select>
+									   </div>
                                     </div>
                                 </form>
                             </div>
@@ -149,7 +160,6 @@
                                 <!--<button class="btn btn-white pull-right" type="close" id="team-cancel-button">Cancel</button>-->
                             </div>
                           </div>
-                          
                         </div>
                       </div> 
                 </div>
@@ -193,7 +203,7 @@
                 confirmButtonText: "Yes, DELETE it!",
                 cancelButtonText: "No, Cancel !",
                 closeOnConfirm: false,
-                closeOnCancel: false },
+                closeOnCancel: true },
             function (isConfirm) {
                 if (isConfirm) {
                 $.ajax({
@@ -201,15 +211,20 @@
                     data:{id: id},
                         type: "GET",
                     success:function(msg){
-                      $(location).attr('href','{% url "training_view" %}');
+	                	swal({
+                            title:"Delete Success",
+                            text: "Record has been DELETED",
+                            type: "success",
+                            confirmButtonText: "Confirm",
+                        }, function () {
+                        	$('#add-member-modal').modal('hide');
+                            window.location.reload();
+                        });
                     },
                     error:function(xhr,textstatus,thrown){
                     }
                 });
-                  swal("Deleted!", "Your record has been DELETED.", "success");
-                return true;
-                } else {
-                    swal("Cancelled", "Your record is safe :)", "error");
+                swal("Deleted!", "Your record has been DELETED.", "success");
                 }
             });
 		}
@@ -224,7 +239,7 @@
 	                confirmButtonText: "Yes, FINISH it!",
 	                cancelButtonText: "No, Cancel !",
 	                closeOnConfirm: false,
-	                closeOnCancel: false },
+	                closeOnCancel: true },
 	            function (isConfirm) {
 	                if (isConfirm) {
 		            $.ajax({
@@ -232,15 +247,19 @@
 		                data:{id: id},
 		                    type: "GET",
 		                success:function(msg){
-		                  $(location).attr('href','{% url "training_view" %}');
+		                	swal({
+	                            title:"Operating Success",
+	                            text: "Training has been FINISHED",
+	                            type: "success",
+	                            confirmButtonText: "Confirm",
+	                        }, function () {
+	                            window.location.reload();
+	                        });
 		                },
 		                error:function(xhr,textstatus,thrown){
 		                }
 		            });
-	                swal("FINISH!", "This apply has been FINISH.", "success");
-	                return true;
-	                } else {
-	                    swal("Cancelled", "This apply is safe :)", "error");
+	                //swal("FINISH!", "This training has been FINISHED.", "success");
 	                }
 	            });
 		}
@@ -278,6 +297,7 @@
             var trainingDesc = $("#trainingDesc").val();
             var startDate = $("#startTime").find("input").val();
             var endDate = $("#endTime").find("input").val();
+            var zoneId = $("#zoneId").val();
             swal({
                 title: "Are you sure to APPLY ?",
                 text: "You can find it at your training list!",
@@ -287,7 +307,7 @@
                 confirmButtonText: "Yes, APPLY it!",
                 cancelButtonText: "No, Cancel !",
                 closeOnConfirm: false,
-                closeOnCancel: false },
+                closeOnCancel: true },
 	            function (isConfirm) {
 	                if (isConfirm) {
 	                $.ajax({
@@ -297,18 +317,24 @@
 	                        name: trainingName,
 	                        desc: trainingDesc,
 	                        startDate: startDate,
-	                        endDate: endDate
-	                        //zoneId:zoneId,
+	                        endDate: endDate,
+	                        zoneId:zoneId,
 	                        //instructorId:instructorId,
 	                        //leader_id: team_leader_id,
 	                    }),
 	                    success: function(data) {
 	                        if (data.error_code == 0) {
-	                            swal("Successed!", "Your apply has been accepted.", "success");
+	    	                	swal({
+	                                title:"Create Success",
+	                                text: "New Training has been created",
+	                                type: "success",
+	                                confirmButtonText: "Confirm",
+	                            }, function () {
+	                                window.location.reload();
+	                            });
 	                        } else {
 	                            swal("Failed!", "Oops! We have encountered an error " + data.error_msg + "!", "error");
 	                        }
-	                        window.location.reload();
 	                    }
 	                });
 	              }

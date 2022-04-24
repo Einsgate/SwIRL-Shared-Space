@@ -50,7 +50,7 @@
 	                                <tr>
 	                                    <th data-hide="phone">Member Name</th>
 	                                    <th data-hide="phone">Email</th>
-	                                    <th data-hide="phone">Register Time</th>
+	                                    <th data-hide="phone">Registration Time</th>
 	                                    <th data-hide="phone">Status</th>
 	                                    <th data-hide="phone">Result</th>
 	                                </tr>
@@ -66,8 +66,8 @@
 				                        <div class="col-sm-10">
 					                        <select class="sel" name="t_result" id="trainResult_{{t.id}}" trainId="{{t.id}}">
 											  <option value="0" {% if t.training_result == 0 %} selected="selected" {% endif %}>Not Graded</option>
-											  <option value="1" {% if t.training_result == 1 %} selected="selected" {% endif %}>Fault</option>
-											  <option value="2" {% if t.training_result == 2 %} selected="selected" {% endif %}>Passed</option>
+											  <option value="1" {% if t.training_result == 1 %} selected="selected" {% endif %}>Fail</option>
+											  <option value="2" {% if t.training_result == 2 %} selected="selected" {% endif %}>Pass</option>
 											</select>
 				                        </div>
 	                                    </td>
