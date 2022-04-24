@@ -2,6 +2,7 @@
 
 from django.db import migrations
 from reservation.models import *
+import os
 
 def init(apps, schema_editor):
     # We can't import the Person model directly as it may be a newer
@@ -27,8 +28,9 @@ def init(apps, schema_editor):
     
     # Test data
     # Default admin
+    SHARED_SPACE_ADMIN_PASSWORD = os.environ['SHARED_SPACE_ADMIN_PASSWORD']
     superuser = User(username = 'admin', email = 'admin@admin.net', is_active = True, is_superuser = True, is_staff = True, role_id = role_admin)
-    superuser.set_password('admin')
+    superuser.set_password(SHARED_SPACE_ADMIN_PASSWORD)
     superuser.save()
     
     test_member_1 = User(username = 'test_member_1', email = 'test_member_1@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = role_member)
@@ -62,12 +64,30 @@ def init(apps, schema_editor):
     TeamMember.objects.create(team_id = team1, user_id = test_member_1)
     TeamMember.objects.create(team_id = team1, user_id = test_member_2)
     TeamMember.objects.create(team_id = team1, user_id = test_member_3)
+    
+    
+    from django.contrib.sites.models import Site
+    from allauth.socialaccount.models import SocialApp, SocialAccount
+    
+    SHARED_SPACE_GOOGLE_CLIENT_ID = os.environ['SHARED_SPACE_GOOGLE_CLIENT_ID']
+    SHARED_SPACE_GOOGLE_SECRET = os.environ['SHARED_SPACE_GOOGLE_SECRET']
+    
+    social_app = SocialApp.objects.create(provider = 'google', name = 'sharedspace', 
+        client_id = SHARED_SPACE_GOOGLE_CLIENT_ID,
+        secret = SHARED_SPACE_GOOGLE_SECRET)
+    
+    site = Site.objects.create(domain='sharedspace.com', name='sharedspace.com')
+    social_app.sites.add(site) # set site 
+            
+        
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
         ('reservation', '0001_initial'),
+        ('socialaccount', '0003_extra_data_default_dict'),
+        ('sites', '0002_alter_domain_unique'),
     ]
 
     operations = [

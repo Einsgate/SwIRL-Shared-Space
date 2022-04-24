@@ -168,6 +168,7 @@ LOGIN_REDIRECT_URL = '/'
 
 # Additional configuration settings
 SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_STORE_TOKENS = True
 ACCOUNT_LOGOUT_ON_GET= True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_REQUIRED = True
@@ -178,15 +179,16 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': [
             'profile',
             'email',
+            'https://www.googleapis.com/auth/calendar',
         ],
         'AUTH_PARAMS': {
-            'access_type': 'online',
+            'access_type': 'offline',
         },
-        'APP': {
-            'client_id': '509460754745-vr7n801bgqd8gm0nvv7v5h4accucar00.apps.googleusercontent.com',
-            'secret': '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',
-            'key': ''
-        }
+        # 'APP': {
+        #     'client_id': '509460754745-vr7n801bgqd8gm0nvv7v5h4accucar00.apps.googleusercontent.com',
+        #     'secret': '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',
+        #     'key': ''
+        # }
     }
 }
 

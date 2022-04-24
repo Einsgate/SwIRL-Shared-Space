@@ -51,21 +51,26 @@ Set password
 If you have created sharedspace database, use ``` drop database sharedspace; ``` to delete it first
 
 Create database
-	``` create database sharedspace; ```
+``` 
+create database sharedspace; 
+```
 
 
 #### 2. Update dependencies
-
-	``` pipenv install ```
+``` 
+pipenv install 
+```
 
 
 #### 3. Migrate database
-
-	``` ./manage.py migrate ```
+``` 
+./manage.py migrate 
+```
 
 #### 4. Runserver
-
-	``` ./manage.py runserver $IP:$PORT ```
+``` 
+./manage.py runserver $IP:$PORT 
+```
 
 
 NOTE: To use google login, you need to send me your aws hostname, e.g., 629260b04e324c2e8370ad27004c4609.vfs.cloud9.us-east-1.amazonaws.com. After adding your url into the white list, you can use the google auth.

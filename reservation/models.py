@@ -12,36 +12,45 @@ class Reservation(models.Model):
     description = models.CharField(max_length = 255, default = '')
     zone_id = models.IntegerField(default = 0)
     zone_name = models.CharField(max_length = 50, default = "noname")
-    user_id = models.IntegerField(default = 0)
-    team_id = models.IntegerField(default = 0)
+    user_id = models.ForeignKey('User', on_delete = models.SET_NULL, blank=True, null=True)
+    team_id = models.ForeignKey('Team', on_delete = models.SET_NULL, blank=True, null=True)
     is_long_term = models.BooleanField(default = False)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     reservation_type = models.IntegerField()
     
     def is_valid(self):
-        if self.reservation_type <= 0 or self.reservation_type > 3 or not self.start_time or not self.end_time or self.start_time >= self.end_time or self.user_id != 1:
+        #  Valid reservation types
+        #  1: not making noise + require quietness
+        #  2: making noise
+        #  3: not making noise + not require quietness
+        if self.reservation_type <= 0 or self.reservation_type > 3 or not self.start_time or not self.end_time or self.start_time >= self.end_time or self.team_id.leader_id.id != self.user_id.id:
             return False
         else:
             return True
             
     def has_confliction(self):
+        # Check if overlapped time period on the same zone exists
         # Find all reservations that 
         # start_time < self.end_time AND end_time > self.start_time AND zone_id = self.zone_id 
         conflict_reservations = Reservation.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time), 
             Q(zone_id__exact = self.zone_id))
         conflict = len(conflict_reservations) > 0
+        
+        # Check if the reservation conflicts with an existing training
+        conflict_reservations = Training.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time))
+        training_conflict = len(conflict_reservations) > 0
             
-        # For those reservations that break the quietness requirement, return a warning back
+        # For those reservations that break the quietness requirement, return a quietness_conflict back
         if self.reservation_type == RESV_TYPE_REQ_QUIET: # Only check when the reservation require a quiet environment
             # Query those overlapped noisy reservations
             conflict_on_quiet_reservations = Reservation.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time), 
                 Q(reservation_type__exact = RESV_TYPE_NOISY))
-            warning = len(conflict_on_quiet_reservations) > 0
+            quietness_conflict = len(conflict_on_quiet_reservations) > 0
         else:
-            warning = False
+            quietness_conflict = False
         
-        return conflict, warning  
+        return conflict, quietness_conflict, training_conflict
             
     @staticmethod
     def list_all(user_id = 0):
@@ -106,7 +115,7 @@ class Team(models.Model):
     leader_id = models.ForeignKey('User', on_delete = models.SET_NULL, blank=True, null=True)
     creation_time = models.DateTimeField(auto_now_add = True)
     
-    # Return teams whose leader is user_id
+    # Return teams that user with user_id is in
     @staticmethod
     def list_all(user_id = 0):
         if user_id == 0:
@@ -118,7 +127,8 @@ class Team(models.Model):
             # ON team.id = team_members.user_id
             # WHERE team_members.user_id = user_id
             return Team.objects.annotate(num_teammembers = Count('teammember')).filter(teammember__user_id__exact = user_id)
-        
+    
+    # Get the team with team_id
     @staticmethod
     def query(team_id):
         return Team.objects.get(pk = team_id)

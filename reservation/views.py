@@ -12,6 +12,7 @@ from django.core import serializers
 from .models import *
 from .errors import *
 from .const import *
+from .utils import *
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 
@@ -20,12 +21,29 @@ from django.core.mail import send_mail
 @login_required
 def index(request):
     zone_list = Zone.list_all()
+    is_leader_or_admin = False
+    if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
+        is_leader_or_admin = True
+        teams = Team.list_all()
+    else:
+        teams = Team.list_all(request.user.id)
+        for team in teams:
+            if request.user.id == team.leader_id.id:
+                is_leader_or_admin = True
+            
+    # Check if the user has the Google token
+    token = SocialToken.objects.filter(account__user = request.user)
+    has_google_token = (len(token) != 0)
+            
     return render(request, "index.html", {
-        "zone_list": zone_list,
-        "warning_code": WARNING_RESERVATION_CONFLICT_CODE,
-        "resv_type_req_quiet": RESV_TYPE_REQ_QUIET,
-        "resv_type_noisy": RESV_TYPE_NOISY,
-        "resv_type_not_req_quiet": RESV_TYPE_NOT_REQ_QUIET,
+        "is_leader_or_admin": is_leader_or_admin,   # If the resquest user is a team leader or an admin/staff
+        "has_google_token": has_google_token,       # If the user has a Google token (so that it can sync reservations to its Google Calendar)
+        "teams": teams,                             # List all teams that the user can make a reservation for
+        "zone_list": zone_list,                     # List all zones of the space
+        "warning_code": WARNING_RESERVATION_CONFLICT_CODE,  # Warning error code for conflicted reservation
+        "resv_type_req_quiet": RESV_TYPE_REQ_QUIET,         # The encoding for reservation type = require quieteness
+        "resv_type_noisy": RESV_TYPE_NOISY,                 # The encoding for reservation type = noisy
+        "resv_type_not_req_quiet": RESV_TYPE_NOT_REQ_QUIET, # The encoding for reservation type = not require quietness
     })
 
 @login_required
@@ -135,52 +153,82 @@ def authority_user(request):
 #}
 @csrf_exempt 
 def reservation_create(request):
-    try:
+    # try:
         if request.method == 'POST':
             #print(str(request.body))
             params = json.loads(request.body)
             #print(params)
             # Check required fields
-            if 'ignore_warning' not in params or 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
+            if 'team_id' not in params or 'ignore_warning' not in params or 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
                 })
                 
+            # Get the team instance
+            print("team_id = ", params['team_id'])
+            try:
+                team = Team.objects.get(id = params['team_id'])
+            except Exception as e:
+                return JsonResponse({
+                    "error_code": ERR_VALUE_ERROR_CODE,
+                    "error_msg": ERR_VALUE_ERROR_MSG
+                })
             
             # Validate fields
             reservation = Reservation(zone_id = params['zone_id'], zone_name = params['zone_name'], is_long_term = params['is_long_term'], title = params['title'], reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
-                end_time = parse_datetime(params['end_time']), user_id = params['user_id'])
+                end_time = parse_datetime(params['end_time']), user_id = request.user, team_id = team)
             if not reservation.is_valid():
                 return JsonResponse({
                     "error_code": ERR_VALUE_ERROR_CODE,
                     "error_msg": ERR_VALUE_ERROR_MSG
                 })
-                
+                        
             # Check conflicts
-            conflict, warning = reservation.has_confliction()
+            conflict, quietness_conflict, training_conflict = reservation.has_confliction()
             if conflict:
                 return JsonResponse({
                     "error_code": ERR_RESERVATION_CONFLICT_CODE,
                     "error_msg": ERR_RESERVATION_CONFLICT_MSG
                 })
-            elif warning and not params['ignore_warning']:
+            elif (quietness_conflict or training_conflict) and not params['ignore_warning']:
                 return JsonResponse({
                     "error_code": WARNING_RESERVATION_CONFLICT_CODE,
                     "error_msg": WARNING_RESERVATION_CONFLICT_MSG,
+                    "quietness_conflict": quietness_conflict,
+                    "training_conflict": training_conflict
                 })
 
             # Create reservation
             reservation.save()
+            
+            # Get team members
+            team_members = TeamMember.get_team_members(team)
+            
+            # Create Google Calendar event
+            service = connect_to_calendar(request)
+            if service:
+                create_event(service, reservation, team_members)
+                return JsonResponse({
+                    "error_code": 0,
+                    "id": reservation.id,
+                })
+            else:
+                return JsonResponse({
+                    "error_code": ERR_INTERNAL_ERROR_CODE,
+                    "error_message": "Cannot connect to Google Calendar",
+                })
+            
+            
             return JsonResponse({
                 "error_code": 0,
                 "id": reservation.id
             })
-    except Exception as e:
-        return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_message": str(e),
-        })
+    # except Exception as e:
+    #     return JsonResponse({
+    #         "error_code": ERR_INTERNAL_ERROR_CODE,
+    #         "error_message": str(e),
+    #     })
 
 def reservation_history(request):
     reservations = Reservation.list_all(0)
@@ -207,8 +255,8 @@ def reservation_list(request):
                 "description": r.description,
                 "zone_id": r.zone_id,
                 "zone_name": r.zone_name,
-                "user_id": r.user_id,
-                "team_id": r.team_id,
+                "user_id": r.user_id.id,
+                "team_id": r.team_id.id,
                 "is_long_term": r.is_long_term,
                 "start_time": r.start_time,
                 "end_time": r.end_time,
