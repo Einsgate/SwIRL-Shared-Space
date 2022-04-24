@@ -8,11 +8,11 @@ from datetime import datetime
 def connect_to_calendar(request):
     #Fetches the User of the request
    # account = SocialAccount.objects.get(user = request.user)
-    print(request.user)
+    #print(request.user)
    # print(account)
     #Fetches the Acces token of the User
     token = SocialToken.objects.get(account__user = request.user)
-    print(token)
+   # print(token)
     #token = SocialToken.objects.filter(account__user__exact = request.user).values('token')
 
     #The scope of service like if we want readonly etc
@@ -23,7 +23,8 @@ def connect_to_calendar(request):
     service = build('calendar', 'v3', credentials = creds)
     return service
 
-def create_event(service, reservation, team_members):
+# Create a Google calender event given the reservation object, team_members (attendees), and if sending notifications via email
+def create_event(service, reservation, team_members, notification):
     # Get attendees
     attendees = []
     for team_member in team_members:
@@ -57,10 +58,10 @@ def create_event(service, reservation, team_members):
       },
     }
     
-    print('ok')
-    print(reservation.start_time)
-    print(reservation.end_time)
+    # print('ok')
+    # print(reservation.start_time)
+    # print(reservation.end_time)
     
-    event = service.events().insert(calendarId='primary', body=event, sendNotifications=True).execute()
-    print('Event created: %s' % (event.get('htmlLink')))
-    print('done')
+    event = service.events().insert(calendarId='primary', body=event, sendNotifications=notification).execute()
+    # print('Event created: %s' % (event.get('htmlLink')))
+    # print('done')

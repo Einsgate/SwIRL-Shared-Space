@@ -202,23 +202,25 @@ def reservation_create(request):
             # Create reservation
             reservation.save()
             
-            # Get team members
-            team_members = TeamMember.get_team_members(team)
-            
-            # Create Google Calendar event
-            service = connect_to_calendar(request)
-            if service:
-                create_event(service, reservation, team_members)
-                return JsonResponse({
-                    "error_code": 0,
-                    "id": reservation.id,
-                })
-            else:
-                return JsonResponse({
-                    "error_code": ERR_INTERNAL_ERROR_CODE,
-                    "error_message": "Cannot connect to Google Calendar",
-                })
-            
+            # Check if syncing to Google Calendar is needed
+            if params.get('sync_google_calender', False):
+                # Get team members
+                team_members = TeamMember.get_team_members(team)
+                
+                # Create Google Calendar event
+                service = connect_to_calendar(request)
+                if service:
+                    create_event(service, reservation, team_members, params.get('send_notification', False))
+                    return JsonResponse({
+                        "error_code": 0,
+                        "id": reservation.id,
+                    })
+                else:
+                    return JsonResponse({
+                        "error_code": ERR_INTERNAL_ERROR_CODE,
+                        "error_message": "Cannot connect to Google Calendar",
+                    })
+                
             
             return JsonResponse({
                 "error_code": 0,

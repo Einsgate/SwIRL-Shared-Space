@@ -533,7 +533,7 @@
                     if (data.error_code == 0) {
                         alert("SUCCESS");
                         ret = true;
-                    } else if (data.error_code == {{warning_code}}) { // Quietness warning
+                    } else if (data.error_code == {{warning_code}}) { // Quietness conflict or training conflict
                         warning = true;
                     } else {
                         alert("Oops! We have encountered an error " + data.error_msg + "!");
@@ -543,39 +543,52 @@
             });
         
             if (warning) {
-                if(!confirm('WARN: There is already another reservation that might be noisy on the time you selected, would you like to continue to make the reservation?')){
-    		        return false;
-    			} else {
-    			    $.ajax({
-    			        async: false,
-                        url: '{% url "reservation_create" %}',
-                        type: "POST",
-                        data: JSON.stringify({ 
-                            team_id: team_id,
-                            sync_google_calender: sync_google_calender,
-                            send_notification: send_notification,
-                            title: title,  
-                            reservation_type: reservation_type, 
-                            description: description, 
-                            zone_id: zone_id, 
-                            zone_name: zone_name,
-                            start_time: start_time, 
-                            end_time: end_time, 
-                            is_long_term: reservation.allDay,
-                            ignore_warning: true,
-                        }),
-                        success: function(data) {
-                            console.log(data);
-                            if (data.error_code == 0) {
-                                alert("SUCCESS");
-                                ret = true;
-                            } else {
-                                alert("Oops! We have encountered an error " + data.error_msg + "!");
-                                ret = false;
-                            }
-                        },
-                    });
-    			}
+                // Quietnees confliction with existing reservation(s)
+                if ({{ quietness_conflict }}) {
+                    if (!confirm('WARN: There is already another reservation that might be noisy on the time you selected. Do you want to continue to make the reservation?')){
+        		        return false;
+        			} 
+                }
+                
+                // Confliction with existing training
+                if ({{ training_conflict }}) {
+                    if (!confirm('WARN: There is a training overlapped with the time period of your reservation, your reservation during that period might not be available. Do you want to continue to make the reservation?')){
+        		        return false;
+        			} 
+                }
+    			
+    			
+                // Continue to make the reservation with ignore_warning 
+			    $.ajax({
+			        async: false,
+                    url: '{% url "reservation_create" %}',
+                    type: "POST",
+                    data: JSON.stringify({ 
+                        team_id: team_id,
+                        sync_google_calender: sync_google_calender,
+                        send_notification: send_notification,
+                        title: title,  
+                        reservation_type: reservation_type, 
+                        description: description, 
+                        zone_id: zone_id, 
+                        zone_name: zone_name,
+                        start_time: start_time, 
+                        end_time: end_time, 
+                        is_long_term: reservation.allDay,
+                        ignore_warning: true,
+                    }),
+                    success: function(data) {
+                        console.log(data);
+                        if (data.error_code == 0) {
+                            alert("SUCCESS");
+                            ret = true;
+                        } else {
+                            alert("Oops! We have encountered an error " + data.error_msg + "!");
+                            ret = false;
+                        }
+                    },
+                });
+    			
             }
         
             return ret;
