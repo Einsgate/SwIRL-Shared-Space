@@ -178,7 +178,7 @@ EMAIL_BACKEND ='django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.qq.com' # SMTP address 
 EMAIL_PORT = 25 # SMTP Port 
 EMAIL_HOST_USER = '394887350@qq.com' #sender email 
-EMAIL_HOST_PASSWORD = 'rgtycnixjkthcbci' #Authority Code not emial password 
+EMAIL_HOST_PASSWORD = 'rgtycnixjkthcbci' #Authority Code not email password 
 EMAIL_USE_TLS = False #using safe mode or not
 
 # Provider specific settings
