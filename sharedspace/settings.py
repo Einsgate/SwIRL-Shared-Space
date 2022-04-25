@@ -184,11 +184,6 @@ SOCIALACCOUNT_PROVIDERS = {
         'AUTH_PARAMS': {
             'access_type': 'offline',
         },
-        # 'APP': {
-        #     'client_id': '509460754745-vr7n801bgqd8gm0nvv7v5h4accucar00.apps.googleusercontent.com',
-        #     'secret': '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',
-        #     'key': ''
-        # }
     }
 }
 

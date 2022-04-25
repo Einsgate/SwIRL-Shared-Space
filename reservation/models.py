@@ -24,7 +24,10 @@ class Reservation(models.Model):
         #  1: not making noise + require quietness
         #  2: making noise
         #  3: not making noise + not require quietness
-        if self.reservation_type <= 0 or self.reservation_type > 3 or not self.start_time or not self.end_time or self.start_time >= self.end_time or self.team_id.leader_id.id != self.user_id.id:
+        if self.reservation_type <= 0 or self.reservation_type > 3 or not self.start_time or not self.end_time or self.start_time >= self.end_time:
+            return False
+        # Admin/Staff/Team leader check
+        elif self.user_id.role_id.id != ROLE_ADMIN and self.user_id.role_id.id != ROLE_STAFF and ( self.team_id.leader_id is None or self.team_id.leader_id.id != self.user_id.id ):
             return False
         else:
             return True
@@ -35,18 +38,18 @@ class Reservation(models.Model):
         # start_time < self.end_time AND end_time > self.start_time AND zone_id = self.zone_id 
         conflict_reservations = Reservation.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time), 
             Q(zone_id__exact = self.zone_id))
-        conflict = len(conflict_reservations) > 0
+        conflict = (len(conflict_reservations) > 0)
         
         # Check if the reservation conflicts with an existing training
         conflict_reservations = Training.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time))
-        training_conflict = len(conflict_reservations) > 0
+        training_conflict = (len(conflict_reservations) > 0)
             
         # For those reservations that break the quietness requirement, return a quietness_conflict back
         if self.reservation_type == RESV_TYPE_REQ_QUIET: # Only check when the reservation require a quiet environment
             # Query those overlapped noisy reservations
             conflict_on_quiet_reservations = Reservation.objects.filter(Q(start_time__lt = self.end_time), Q(end_time__gt = self.start_time), 
                 Q(reservation_type__exact = RESV_TYPE_NOISY))
-            quietness_conflict = len(conflict_on_quiet_reservations) > 0
+            quietness_conflict = (len(conflict_on_quiet_reservations) > 0)
         else:
             quietness_conflict = False
         

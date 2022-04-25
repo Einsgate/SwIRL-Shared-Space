@@ -180,7 +180,7 @@ def reservation_create(request):
             params = json.loads(request.body)
             #print(params)
             # Check required fields
-            if 'team_id' not in params or 'ignore_warning' not in params or 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params:
+            if 'team_id' not in params or 'zone_id' not in params or 'zone_name' not in params  or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
@@ -197,7 +197,7 @@ def reservation_create(request):
                 })
             
             # Validate fields
-            reservation = Reservation(zone_id = params['zone_id'], zone_name = params['zone_name'], is_long_term = params['is_long_term'], title = params['title'], reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
+            reservation = Reservation(zone_id = params['zone_id'], zone_name = params['zone_name'], title = params['title'], description = params.get('description', ""), reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
                 end_time = parse_datetime(params['end_time']), user_id = request.user, team_id = team)
             if not reservation.is_valid():
                 return JsonResponse({
@@ -212,7 +212,7 @@ def reservation_create(request):
                     "error_code": ERR_RESERVATION_CONFLICT_CODE,
                     "error_msg": ERR_RESERVATION_CONFLICT_MSG
                 })
-            elif (quietness_conflict or training_conflict) and not params['ignore_warning']:
+            elif (quietness_conflict or training_conflict) and not params.get('ignore_warning', False):
                 return JsonResponse({
                     "error_code": WARNING_RESERVATION_CONFLICT_CODE,
                     "error_msg": WARNING_RESERVATION_CONFLICT_MSG,
@@ -314,25 +314,25 @@ def reservation_delete(request):
             "error_code": 0,
         })
 
-@login_required
-def zone_list(request):
-    if request.method == 'GET':
-        zones = Zone.list_all()
-        results = []
+# @login_required
+# def zone_list(request):
+#     if request.method == 'GET':
+#         zones = Zone.list_all()
+#         results = []
         
-        for zone in zones:
-            results.append({
-                "id": zone.id,
-                "name": zone.name,
-                "is_noisy": zone.is_noisy,
-                "description": zone.description,
-                "zone_type": zone.zone_type,
-            })
+#         for zone in zones:
+#             results.append({
+#                 "id": zone.id,
+#                 "name": zone.name,
+#                 "is_noisy": zone.is_noisy,
+#                 "description": zone.description,
+#                 "zone_type": zone.zone_type,
+#             })
         
-        return JsonResponse({
-            "error_code": 0,
-            "results": results,
-        })
+#         return JsonResponse({
+#             "error_code": 0,
+#             "results": results,
+#         })
 
 # Team view
 # Show the list of teams in page /team/view/
