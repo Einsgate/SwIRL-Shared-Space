@@ -6,29 +6,75 @@ import json
 from dateutil import parser
 from pytz import timezone
 
+from .models import *
 from .const import *
 from .errors import *
 import numpy as np
 import random
+import os
 
 from django.urls import reverse
+from django.core.exceptions import PermissionDenied
 
 # Create your tests here.
 
+SHARED_SPACE_ADMIN_PASSWORD = os.environ['SHARED_SPACE_ADMIN_PASSWORD']
+
+class TestData(object):
+    def init_database(self):
+        self.role_admin = Role.objects.get(id = 0)
+        self.role_staff = Role.objects.get(id = 1)
+        self.role_team_leader = Role.objects.get(id = 2)
+        self.role_member = Role.objects.get(id = 3)
+        
+         # Test data
+        self.test_member_1 = User(username = 'test_member_1', email = 'test_member_1@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = self.role_member)
+        self.test_member_1.set_password('123')
+        self.test_member_1.save()
+        
+        self.test_member_2 = User(username = 'test_member_2', email = 'test_member_2@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = self.role_member)
+        self.test_member_2.set_password('123')
+        self.test_member_2.save()
+        
+        #UserModel = apps.get_model('reservation', 'User')
+        User.objects.create(username = "test_admin_1", email = "test_admin_1@tamu.edu", role_id = self.role_admin)
+        User.objects.create(username = "test_admin_2", email = "test_admin_2@tamu.edu", role_id = self.role_admin)
+        User.objects.create(username = "test_staff_1", email = "test_staff_1@tamu.edu", role_id = self.role_staff)
+        User.objects.create(username = "test_staff_2", email = "test_staff_2@tamu.edu", role_id = self.role_staff)
+        #User.objects.create(id = 3, username = "test_lead_1", email = "test_lead_1@tamu.edu", role_id = 2)
+        #User.objects.create(id = 3, username = "test_lead_2", email = "test_lead_2@tamu.edu", role_id = 2)
+        #user5 = UserModel.objects.create(username = "test_member_1", email = "test_member_1@tamu.edu", role_id = 2)
+        self.test_member_1 = User.objects.get(username = "test_member_1")
+        self.test_member_2 = User.objects.get(username = "test_member_2")
+        self.test_member_3 = User.objects.create(username = "test_member_3", email = "test_member_3@tamu.edu", role_id = self.role_member)
+        User.objects.create(username = "test_member_4", email = "test_member_4@tamu.edu", role_id = self.role_member)
+        User.objects.create(username = "test_member_5", email = "test_member_5@tamu.edu", role_id = self.role_member)
+    
+    
+       # Team = apps.get_model('reservation', 'Team')
+        self.team1 = Team.objects.create(name = "test_team_1", leader_id = self.test_member_1)
+        Team.objects.create(name = "test_team_2")
+        
+        #TeamMember = apps.get_model('reservation', 'TeamMember')
+        TeamMember.objects.create(team_id = self.team1, user_id = self.test_member_1)
+        TeamMember.objects.create(team_id = self.team1, user_id = self.test_member_2)
+        TeamMember.objects.create(team_id = self.team1, user_id = self.test_member_3)
+
 # Test modals
-class ReservationTestCase(TestCase):
+class ReservationTestCase(TestCase, TestData):
     def setUp(self):
         self.c = Client()
-        
+
+        self.init_database()
         #Reservation.objects.create(title = 'setup1', reservation_type = 0, start_time = '2000-01-01 12:00:00', end_time = '2000-01-01 12:30:00', user_id = 1)
 
     def test_is_valid(self):
-        reservation1 = Reservation(title = 'test', reservation_type = 0, start_time = '2022-01-01 13:00:00',
-            end_time = '2022-01-01 14:00:00', user_id = 1)
-        reservation2 = Reservation(title = 'test', reservation_type = 3, start_time = '2022-01-01 13:00:00',
-            end_time = '2022-01-01 14:00:00', user_id = 1)
-        reservation3 = Reservation(title = 'test', reservation_type = 0, start_time = '2022-01-01 15:00:00',
-            end_time = '2022-01-01 14:00:00', user_id = 1)
+        reservation1 = Reservation(reservation_type = 1, start_time = '2022-01-01 13:00:00', user_id = self.test_member_1, team_id = self.team1, 
+            end_time = '2022-01-01 14:00:00')
+        reservation2 = Reservation(reservation_type = 0, start_time = '2022-01-01 13:00:00', user_id = self.test_member_1, team_id = self.team1,
+            end_time = '2022-01-01 14:00:00')
+        reservation3 = Reservation(reservation_type = 1, start_time = '2022-01-01 15:00:00', user_id = self.test_member_1, team_id = self.team1,
+            end_time = '2022-01-01 14:00:00')
         
         self.assertEqual(reservation1.is_valid(), True)
         self.assertEqual(reservation2.is_valid(), False)
@@ -36,27 +82,29 @@ class ReservationTestCase(TestCase):
         
         
     def test_has_confliction(self):
-        Reservation.objects.create(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1)
-        Reservation.objects.create(zone_id = 2, reservation_type = 0, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1)
+        Reservation.objects.create(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00')
+        Reservation.objects.create(zone_id = 2, reservation_type = 2, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00')
         
-        self.assertEqual(Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1).has_confliction(), True)
-        self.assertEqual(Reservation(zone_id = 3, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1).has_confliction(), False)
-        self.assertEqual(Reservation(zone_id = 3, reservation_type = 0, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1).has_confliction(), True)
-        self.assertEqual(Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1).has_confliction(), True)
+        self.assertEqual(Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00').has_confliction()[0], True)
+        self.assertEqual(Reservation(zone_id = 3, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00').has_confliction()[0], False)
+        self.assertEqual(Reservation(zone_id = 3, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00').has_confliction()[1], True)
+        self.assertEqual(Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00').has_confliction()[0], False)
 
         
         #response = c.post('/reservation/create', {'title': "test", "reservation_type": 0, start_time = 'xxx', end_time = "xxx"})
         
     def test_create_success(self):
+        self.c.login(username='admin', password=SHARED_SPACE_ADMIN_PASSWORD)
+        #self.c.login(username='test_member_1', password='123')
+        
         resp = self.c.post('/reservation/create', json.dumps({
             'title': 'test', 
-            'reservation_type': 0, 
-            'is_long_term': False,
+            'reservation_type': 3, 
             'zone_id': 1, 
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 13:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -67,15 +115,16 @@ class ReservationTestCase(TestCase):
         
        
     def test_create_fail(self):
+        self.c.login(username='admin', password=SHARED_SPACE_ADMIN_PASSWORD)
+        
         resp = self.c.post('/reservation/create', json.dumps({
             'title': 'test', 
-            'reservation_type': 0, 
-            'is_long_term': False,
+            'reservation_type': 1, 
             'zone_id': 1, 
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 13:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -85,17 +134,15 @@ class ReservationTestCase(TestCase):
         self.assertEqual(data["error_code"], 0)
         
         
-        
         # Since this reservation is conflicted with the previous one, it should fail
         resp = self.c.post('/reservation/create', json.dumps({
             'title': 'test', 
-            'reservation_type': 0, 
-            'is_long_term': False,
+            'reservation_type': 1, 
             'zone_id': 1, 
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 14:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -107,12 +154,11 @@ class ReservationTestCase(TestCase):
         # Fail since missing required field
         resp = self.c.post('/reservation/create', json.dumps({
             'title': 'test', 
-            'reservation_type': 0, 
-            'is_long_term': False,
+            'reservation_type': 1, 
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 14:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -130,7 +176,7 @@ class ReservationTestCase(TestCase):
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 14:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -142,10 +188,10 @@ class ReservationTestCase(TestCase):
     def test_list(self):
         Reservation.objects.all().delete()
         reservations = [
-            Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1),
-            Reservation(zone_id = 2, reservation_type = 0, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1),
-            Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1),
-            Reservation(zone_id = 4, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1),
+            Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 2, reservation_type = 3, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 4, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
         ]
 
         for r in reservations:
@@ -169,15 +215,15 @@ class ReservationTestCase(TestCase):
             list_end_time, end_time = parser.parse(r["end_time"]).replace(tzinfo=timezone('UTC')), parser.parse(reservations[i].end_time).replace(tzinfo=timezone('UTC'))
             self.assertEqual(list_start_time == start_time, False) 
             self.assertEqual(list_end_time == end_time, False)
-            self.assertEqual(r["user_id"], reservations[i].user_id) 
+            self.assertEqual(r["user_id"], reservations[i].user_id.id) 
         
     def test_delete(self):
         Reservation.objects.all().delete()
         reservations = [
-            Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1),
-            Reservation(zone_id = 2, reservation_type = 0, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1),
-            Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1),
-            Reservation(zone_id = 4, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1),
+            Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 2, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 4, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
         ]
         
         id = 0
@@ -197,13 +243,13 @@ class ReservationTestCase(TestCase):
         # Check if it is deleted
         self.assertEqual(len(Reservation.objects.filter(id=id)), 0)
 
-    def test_zone_list(self):
-        self.c.login(username='admin', password='admin')
-        resp = self.c.get('/zone/list')
-        self.assertEqual(resp.status_code, 200)
+    # def test_zone_list(self):
+    #     self.c.login(username='admin', password=SHARED_SPACE_ADMIN_PASSWORD)
+    #     resp = self.c.get('/zone/list')
+    #     self.assertEqual(resp.status_code, 200)
         
-        data = json.loads(resp.content)
-        self.assertEqual(data["error_code"], 0)  
+    #     data = json.loads(resp.content)
+    #     self.assertEqual(data["error_code"], 0)  
 
 
 # Initialize the database to have 8 users and 7 teams, where 
@@ -216,14 +262,16 @@ def init_users_and_teams():
     User.objects.all().delete()
     Team.objects.all().delete()
     TeamMember.objects.all().delete()
+    Role.objects.all().delete()
     
     num_users = 6
     num_teams = 5
-    
-    role_admin = Role.objects.get(id = ROLE_ADMIN)
-    role_staff = Role.objects.get(id = ROLE_STAFF)
-    role_team_leader = Role.objects.get(id = ROLE_LEAD, role_name = "team leader")
-    role_member = Role.objects.get(id = ROLE_MEMBER, role_name = "member")
+    role_admin = Role.objects.create(id = 0, role_name = "admin")
+    role_admin.save()
+    role_staff = Role.objects.create(id = 1, role_name = "staff")
+    role_staff.save()
+    role_member = Role.objects.create(id = ROLE_MEMBER, role_name = "member")
+    role_member.save()
 
     # Initialize users.
     test_users = [
@@ -367,7 +415,7 @@ class TeamListViewTestCase(TestCase):
             users = resp.context['users']
             self.assertEqual(len(users), self.n_users - 2) # exclude the admin and the staff
             
-            self.assertEqual(resp.context['team_list_title'], 'Team List')
+            self.assertEqual(resp.context['team_list_title'], 'Team Management')
         
     def test_member_view(self): 
         for i in range(2, self.n_users):
@@ -389,7 +437,7 @@ class TeamListViewTestCase(TestCase):
         valid_leader_id = str(self.test_users[2].id)
         
         # Test the wrong field cases
-        post_body_list = [
+        post_req_body_list = [
             # Missing the leader_id
             {'name': valid_team_name},       
             # Missing the name
@@ -404,7 +452,7 @@ class TeamListViewTestCase(TestCase):
             {'name': valid_team_name, 'leader_id': str(self.test_users[1].id)}, 
         ]
         
-        response_list = [
+        post_res_code_list = [
             ERR_MISSING_REQUIRED_FIELD_CODE, 
             ERR_MISSING_REQUIRED_FIELD_CODE, 
             ERR_MISSING_TEAM_NAME_CODE, 
@@ -416,13 +464,13 @@ class TeamListViewTestCase(TestCase):
         for username in [self.test_users[0].username, self.test_users[1].username]:
             self.c.login(username=username, password='password')
         
-            for post_body, response in zip(post_body_list, response_list):
-                resp = self.c.post(reverse('team_view_create'), json.dumps(post_body), content_type="application/json")
+            for req_body, res_code in zip(post_req_body_list, post_res_code_list):
+                resp = self.c.post(reverse('team_view_create'), json.dumps(req_body), content_type="application/json")
                 self.assertEqual(resp.status_code, 200)
                 
                 data = json.loads(resp.content)
                 # print(data['error_msg'])
-                self.assertEqual(data['error_code'], response)
+                self.assertEqual(data['error_code'], res_code)
                 
                 self.assertEqual(Team.objects.all().count(), self.n_teams)
                 self.assertEqual(TeamMember.objects.count(), self.n_team_members)
@@ -473,37 +521,313 @@ class TeamListViewTestCase(TestCase):
         self.assertEqual(Team.objects.all().count(), self.n_teams)
         self.assertEqual(TeamMember.objects.count(), self.n_team_members)
         
-    def test_admin_staff_edit_team(self): 
-        # team_index = 2
-        # valid_team_id = self.test_teams[team_index].id
-        # valid_team_name = 'abc'
-        # valid_team_leader_id = self.test_members[3].id
-        # payload_list = [
-        #     # Missing the team_name
-        #     {'team_id': valid_team_id, 'team_name': '', 'team_leader_id': valid_team_leader_id},       
-        #     # Missing the leader_id
-        #     {'team_id': valid_team_id, 'team_name': valid_team_name: 'team_leader_id', ''},   
-        # ]
+    def test_admin_staff_edit_team_get(self):
+        uid_list = [0, 1]
+        tid_list = [0, 4]
+        get_req_body_team_list = [
+            # Test get_bodies for test_teams[0]
+            [
+                # Missing team_id
+                {}, 
+                {'team_id': str(self.test_teams[tid_list[0]].id), }, 
+            ], 
+            # Test get_bodies for test_teams[4]
+            [
+                # Missing team_id
+                {}, 
+                {'team_id': str(self.test_teams[tid_list[1]].id), }, 
+            ]
+        ]
         
-        # response_list = [
-        #     {'team_name': self.test_teams[team_index].name, 'team_leader_id': valid_team_id
-            
-        # ]
-        pass
+        get_res_body_team_list = [
+            [
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                {   
+                    'error_code': 0, 
+                    'team_name': self.test_teams[tid_list[0]].name, 
+                    'team_leader_id': -1, 
+                    'members': [[m.id, m.username, m.email] for m in self.test_users[2: ]], 
+                }, 
+            ], 
+            [
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                {   
+                    'error_code': 0, 
+                    'team_name': self.test_teams[tid_list[1]].name, 
+                    'team_leader_id': self.test_teams[tid_list[1]].leader_id.id, 
+                    'members': [[m.id, m.username, m.email] for i, m in enumerate(self.test_users[2: ]) if tid_list[1] % (i + 2) == 0], 
+                }, 
+            ], 
+        ]
         
-    def test_member_edit_team(self): 
+        for uid in uid_list: 
+            self.c.login(username=self.test_users[uid].username, password='password')
+            # test_teams[0] has all test_users as its members but no lead.
+            # test_teams[4] has test_users[2] and test_users[4] as its members and the lead is test_users[2].
+            for tid, get_req_body_list, get_res_body_list in zip(tid_list, get_req_body_team_list, get_res_body_team_list):
+                
+                # Get request
+                for req_body, res_body in zip(get_req_body_list, get_res_body_list): 
+                    resp = self.c.get(reverse('team_view_update'), req_body)
+                    self.assertEqual(resp.status_code, 200)
+                    data = json.loads(resp.content)
+                    self.assertEqual(data['error_code'], res_body['error_code'])
+                    if res_body['error_code'] == 0: 
+                        self.assertEqual(data['team_name'], res_body['team_name'])
+                        self.assertEqual(data['team_leader_id'], res_body['team_leader_id'])
+                        self.assertEqual(sorted(data['members'], key=lambda row: row[0]), sorted(res_body['members'], key=lambda row: row[0]))
+        
+    def test_admin_staff_edit_team_post(self): 
+        uid_list = [0, 1]
+        tid_list = [0, 4]
+        
+        valid_team_name = 'test_abc'
+        valid_team_leader_id = self.test_users[4].id
+        valid_team_leader_id_str = str(valid_team_leader_id)
+        valid_team_leader_user_name = self.test_users[4].username
+        post_req_body_team_list = [
+            # Test get_bodies for test_teams[0]
+            [
+                # Missing team_id
+                {'team_name': valid_team_name, 'team_leader_id': valid_team_leader_id_str}, 
+                # Missing team_name
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_leader_id': valid_team_leader_id_str}, 
+                # Missing team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': '-2'}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[0].id)}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[1].id)}, 
+                # Unchanged team_name
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': '', 'team_leader_id': valid_team_leader_id_str}, 
+                # Unchanged team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': '-1'}, 
+                # Unchanged team_leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': ''}, 
+                # Changed team name and team leader_id
+                {'team_id': str(self.test_teams[tid_list[0]].id), 'team_name': valid_team_name, 'team_leader_id': valid_team_leader_id_str}, 
+            ], 
+            # Test get_bodies for test_teams[4]
+            [
+                # Missing team_id
+                {'team_name': valid_team_name, 'team_leader_id': valid_team_leader_id_str}, 
+                # Missing team_name
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_leader_id': valid_team_leader_id_str}, 
+                # Missing team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': '-2'}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[0].id)}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[1].id)}, 
+                # Invalid team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': str(self.test_users[3].id)}, 
+                # Unchanged team_name
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': '', 'team_leader_id': valid_team_leader_id_str}, 
+                # Unchanged team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': '-1'}, 
+                # Unchanged team_leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': ''}, 
+                # Changed team name and team leader_id
+                {'team_id': str(self.test_teams[tid_list[1]].id), 'team_name': valid_team_name, 'team_leader_id': valid_team_leader_id_str}, 
+            ]
+        ]
+        
+        # The field 'new_team_name' is not a field in the real post body. 
+        # Here we use this for checking whether the team name changed correctly.
+        post_res_body_team_list = [
+            [
+                 # Missing team_id
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Missing team_name
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Missing team_leader_id
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_INTERNAL_ERROR_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE}, 
+                # Unchanged team_name
+                {
+                    'error_code': 0, 
+                    'new_team_name': self.test_teams[tid_list[0]].name, 
+                    'new_team_leader_id': valid_team_leader_id, 
+                    'new_team_leader_username': valid_team_leader_user_name, 
+                }, 
+                # Unchanged team_leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': -1, 
+                    'new_team_leader_username': '', 
+                }, 
+                # Unchanged team_leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': -1, 
+                    'new_team_leader_username': '', 
+                }, 
+                # Changed team name and team leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': valid_team_leader_id, 
+                    'new_team_leader_username': valid_team_leader_user_name, 
+                }, 
+            ], 
+            [
+                # Missing team_id
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Missing team_name
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Missing team_leader_id
+                {'error_code': ERR_MISSING_REQUIRED_FIELD_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_INTERNAL_ERROR_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE}, 
+                # Invalid team_leader_id
+                {'error_code': ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE},
+                # Unchanged team_name
+                {
+                    'error_code': 0, 
+                    'new_team_name': self.test_teams[tid_list[1]].name, 
+                    'new_team_leader_id': valid_team_leader_id, 
+                    'new_team_leader_username': valid_team_leader_user_name, 
+                }, 
+                # Unchanged team_leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': self.test_users[tid_list[1]].id, 
+                    'new_team_leader_username': self.test_users[tid_list[1]].username,  
+                }, 
+                # Unchanged team_leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': self.test_users[tid_list[1]].id, 
+                    'new_team_leader_username': self.test_users[tid_list[1]].username,  
+                }, 
+                # Changed team name and team leader_id
+                {
+                    'error_code': 0,
+                    'new_team_name': valid_team_name, 
+                    'new_team_leader_id': valid_team_leader_id, 
+                    'new_team_leader_username': valid_team_leader_user_name, 
+                }, 
+            ],  
+        ]
+        
+        for uid in uid_list: 
+            self.c.login(username=self.test_users[uid].username, password='password')
+            # test_teams[0] has all test_users as its members but no lead.
+            # test_teams[4] has test_users[2] and test_users[4] as its members and the lead is test_users[2].
+            for tid, post_req_body_list, post_res_body_list in zip(tid_list, post_req_body_team_list, post_res_body_team_list):
+                
+                # POST request
+                for req_body, res_body in zip(post_req_body_list, post_res_body_list): 
+                    # print(tid, req_body, res_body)
+                    old_team_name = self.test_teams[tid].name
+                    old_leader_id  = self.test_teams[tid].leader_id
+                    
+                    resp = self.c.post(reverse('team_view_update'), json.dumps(req_body), content_type="application/json")
+                    self.assertEqual(resp.status_code, 200)
+                    data = json.loads(resp.content)
+                    self.assertEqual(data['error_code'], res_body['error_code'])
+                    if res_body['error_code'] == 0: 
+                        self.assertEqual(data['new_team_leader_id'], res_body['new_team_leader_id'])
+                        self.assertEqual(data['new_team_leader_username'], res_body['new_team_leader_username'])
+                        self.assertEqual(Team.query(self.test_teams[tid].id).name, res_body['new_team_name'])
+                        
+                    # Recover the original record
+                    self.test_teams[tid].name = old_team_name
+                    self.test_teams[tid].leader_id = old_leader_id
+                    self.test_teams[tid].save()
+        
+    def test_member_edit_team_get_post(self): 
         uid = 2
-        tid = 0
+        tid = uid   # This team is leaded by self.test_users[uid]
         self.c.login(username=self.test_users[uid].username, password='password')
-        resp = self.c.post(reverse('team_view_update'), json.dumps({
-            'team_id': self.test_teams[tid].id, 'team_name': 'abc', 'team_leader_id': self.test_users[uid].id
-        }), content_type="application/json")
-        self.assertEqual(resp.status_code, 200)
-        data = json.loads(resp.content)
-        self.assertEqual(data['error_code'], ERR_LACK_OF_AUTHORITY_CODE)
+        
+        # Get request
+        get_req_body_list = [
+            # Missing team_id
+            {}, 
+            {'team_id': self.test_teams[tid].id, }, 
+        ]
+        
+        get_res_code_list = [
+            ERR_LACK_OF_AUTHORITY_CODE, 
+            ERR_LACK_OF_AUTHORITY_CODE, 
+        ]
+        
+        for req_body, res_code in zip(get_req_body_list, get_res_code_list): 
+            resp = self.c.get(reverse('team_view_update'), req_body)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
+            
+        # POST request
+        post_req_body_list = [
+            # Missing some field. But because we first check the authority, so the response should also be str(self.test_teams[tid].id)
+            {'team_id': str(self.test_teams[tid].id)}, 
+            # A normal request body.
+            {'team_id': str(self.test_teams[tid].id), 'team_name': 'abc', 'team_leader_id': self.test_users[uid].id}
+        ]
+        
+        post_res_code_list = [
+            ERR_LACK_OF_AUTHORITY_CODE, 
+            ERR_LACK_OF_AUTHORITY_CODE, 
+        ]
+        
+        for req_body, res_code in zip(post_req_body_list, post_res_code_list): 
+            resp = self.c.post(reverse('team_view_update'), json.dumps(req_body), content_type="application/json")
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
 
     def test_admin_staff_delete_team(self): 
-        pass
+        uid_list = [0, 0, 1]
+        tid_list = [-1, 0, 2]
+        req_body_list = [
+            # Missing team_id
+            {}, 
+            {'id': str(self.test_teams[tid_list[1]].id), }, 
+            {'id': str(self.test_teams[tid_list[2]].id), }, 
+        ]
+        
+        res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            0, 
+            0, 
+        ]
+        
+        cur_n_teams = self.n_teams
+        cur_n_team_members = self.n_team_members
+        for uid, tid, req_body, res_code in zip(uid_list, tid_list, req_body_list, res_code_list): 
+            self.c.login(username=self.test_users[uid].username, password='password')
+            resp = self.c.get(reverse('team_view_delete'), req_body)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
+            if res_code == 0: 
+                cur_n_teams -= 1
+                cur_n_team_members -= len([x for x in range(2, self.n_users) if tid % x == 0])
+                self.assertEqual(Team.objects.all().count(), cur_n_teams)
+                with self.assertRaisesMessage(Team.DoesNotExist, 'Team matching query does not exist'):
+                    Team.query(self.test_teams[tid].id)
+                self.assertEqual(TeamMember.objects.all().count(), cur_n_team_members)
+                self.assertEqual(TeamMember.get_team_members(team_id = self.test_teams[tid].id).count(), 0)
+                
         
     def test_member_delete_team(self): 
         uid = 2
@@ -523,18 +847,191 @@ class TeamDetailViewTestCase(TestCase):
         self.n_teams = len(self.test_teams)
         self.n_team_members = len(self.test_team_members)
         
+    def test_detail_view(self): 
+        # Admin check team 0 including all usres as members.
+        self.c.login(username=self.test_users[0].username, password='password')
+        resp = self.c.get(reverse('team_detail', args = [self.test_teams[0].id]))
+        self.assertTemplateUsed(resp, 'manage-team/team_detail.html')
+        data = resp.context
+        self.assertEqual(data["team_id"], self.test_teams[0].id) 
+        self.assertEqual(data["team_name"], self.test_teams[0].name)
+        self.assertEqual(data["team_leader_id"], -1)
+        self.assertEqual(len(data["not_members"]), 0) 
+        for i in range(2, self.n_users): 
+            self.assertTrue(TeamMember.get_by_team_members(team_id = self.test_teams[0].id, user_id = self.test_users[i].id) in data["members"])
+        
+        # User 2 check the team 3 (user 2 isn't in the team).   
+        self.c.login(username=self.test_users[2].username, password='password')
+        resp = self.c.get(reverse('team_detail', args = [self.test_teams[3].id]))
+        self.assertRaises(PermissionDenied)
+
+        # User 2 check the team 4 (user 2 is in the team).
+        self.c.login(username=self.test_users[2].username, password='password')
+        resp = self.c.get(reverse('team_detail', args = [self.test_teams[4].id]))
+        data = resp.context
+        self.assertEqual(data["team_id"], self.test_teams[4].id) 
+        self.assertEqual(data["team_name"], self.test_teams[4].name)
+        self.assertEqual(data["team_leader_id"], self.test_users[4].id)
+        for i in range(2, self.n_users): 
+            if 4 % i == 0:
+                self.assertTrue(TeamMember.get_by_team_members(team_id = self.test_teams[4].id, user_id = self.test_users[i].id) in data["members"])
+            else:
+                self.assertTrue(User.query(self.test_users[i].id) in data["not_members"])
+        self.assertEqual(len(data["members"]) + len(data["not_members"]), self.n_users - 2)
+        
     def test_admin_staff_leader_add_members(self): 
-        pass
+        tid = 4
+        team_id = self.test_teams[tid]
+        
+        post_req_body_list = [
+            # Missing selected_members
+            {},       
+            # Invalid member
+            {'selected_members': [self.test_users[i].id for i in [3, 1]]}, 
+            # Valid
+            {'selected_members': [self.test_users[i].id for i in[2, 3, 4, 4, 5]]}, 
+        ]
+        
+        post_res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_ADD_INVALID_MEMBER_CODE, 
+            0, 
+        ]
+        
+        self.c.login(username=self.test_users[0].username, password='password')
+        for req_body, res_code in zip(post_req_body_list, post_res_code_list):
+            resp = self.c.post(reverse('team_detail_update', args = [self.test_teams[tid].id]), json.dumps(req_body), content_type="application/json")
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
+            
+        self.assertNotEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[3].id), None)
+        self.assertNotEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[5].id), None)
+        self.assertEqual(TeamMember.get_team_members(team_id = team_id).count(), 4)
+        self.assertEqual(TeamMember.objects.all().count(), self.n_team_members + 2)
         
     def test_member_add_members(self): 
-        pass
+        tid = 4
+        self.c.login(username=self.test_users[2].username, password='password')
+        team_id = self.test_teams[tid]
+        req_body, res_code = {'selected_members': [self.test_users[i].id for i in [2, 3, 4, 4, 5]]}, ERR_LACK_OF_AUTHORITY_CODE
+        resp = self.c.post(reverse('team_detail_update', args = [self.test_teams[tid].id]), json.dumps(req_body), content_type="application/json")
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], res_code)
     
     def test_admin_staff_delete_members(self): 
-        pass
+        tid = 4
+        team_id = self.test_teams[tid].id
+        
+        get_req_body_list = [
+            # Missing selected_members
+            {},       
+            # Not a member
+            {'id': TeamMember.get_by_team_members(team_id = self.test_teams[0].id, user_id = self.test_users[3].id).id}, 
+        ]
+        
+        get_res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE, 
+        ]
+        
+        self.c.login(username=self.test_users[0].username, password='password')
+        for req_body, res_code in zip(get_req_body_list, get_res_code_list):
+            resp = self.c.get(reverse('team_detail_delete', args = [team_id]), req_body)
+            data = json.loads(resp.content)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(data['error_code'], res_code)
+            
+        # Delete not a leader
+        req_body, res_code = {'id': TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[2].id).id}, 0
+        resp = self.c.get(reverse('team_detail_delete', args = [team_id]), req_body)
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], res_code)
+            
+        self.assertEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[2].id), None)
+        self.assertEqual(TeamMember.get_team_members(team_id = team_id).count(), 1)
+        self.assertEqual(TeamMember.objects.all().count(), self.n_team_members - 1)
+        
+        # Delete a leader
+        req_body, res_code = {'id': TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[4].id).id}, 0
+        resp = self.c.get(reverse('team_detail_delete', args = [team_id]), req_body)
+        data = json.loads(resp.content)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(data['error_code'], res_code)
+        
+        self.assertEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[4].id), None)
+        self.assertEqual(Team.query(self.test_teams[4].id).leader_id, None)
+        self.assertEqual(TeamMember.get_team_members(team_id = team_id).count(), 0)
+        self.assertEqual(TeamMember.objects.all().count(), self.n_team_members - 2)
         
     def test_leader_delete_members(self): 
-        pass
+        tid = 4
+        team_id = self.test_teams[tid]
+        
+        uid = 4 # leader
+        
+        post_req_body_list = [
+            # Missing selected_members
+            {},       
+            # Not a member
+            {'id': TeamMember.get_by_team_members(team_id = self.test_teams[0].id, user_id = self.test_users[3].id).id}, 
+            # Delete himself
+            {'id': TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[4].id).id}, 
+        ]
+        
+        post_res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE, 
+            ERR_LACK_OF_AUTHORITY_CODE, 
+        ]
+        
+        self.c.login(username=self.test_users[uid].username, password='password')
+        for req_body, res_code in zip(post_req_body_list, post_res_code_list):
+            resp = self.c.get(reverse('team_detail_delete', args = [self.test_teams[tid].id]), req_body)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
+            
+        # Delete not a leader
+        req_body, res_code = {'id': TeamMember.get_by_team_members(team_id = self.test_teams[tid].id, user_id =self.test_users[2].id).id}, 0
+        resp = self.c.get(reverse('team_detail_delete', args = [self.test_teams[tid].id]), req_body)
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['error_code'], res_code)
+            
+        self.assertEqual(TeamMember.get_by_team_members(team_id = team_id, user_id = self.test_users[2].id), None)
+        self.assertEqual(TeamMember.get_team_members(team_id = team_id).count(), 1)
+        self.assertEqual(TeamMember.objects.all().count(), self.n_team_members - 1)
     
     def test_member_delete_members(self):
-        pass
+        uid_list = [2, 3, 2]
+        tid_list = [4, 3, 4]
+        # test_users[2] is a member but not the leader of test_teams[4]
+        # So test_users[3] isn't a member in test_teams[4], test_users[2] is a member but not the leader of test_teams[4]
+        # They both have no authority to delete members
+        team_member = TeamMember.get_by_team_members(team_id = self.test_teams[4].id, user_id = self.test_users[2].id)
+        # Get request
+        get_req_body_list = [
+            # Missing team_id
+            {}, 
+            # Delete a member not in this team
+            {'id': str(team_member.id), }, 
+            # Neither admin / staff or the team leader 
+            {'id': str(team_member.id), }
+        ]
+        
+        get_res_code_list = [
+            ERR_MISSING_REQUIRED_FIELD_CODE, 
+            ERR_NOT_A_MEMBER_OF_THE_TEAM_CODE, 
+            ERR_LACK_OF_AUTHORITY_CODE, 
+        ]
+        
+        for uid, tid, req_body, res_code in zip(uid_list, tid_list, get_req_body_list, get_res_code_list): 
+            self.c.login(username=self.test_users[uid].username, password='password')
+            resp = self.c.get(reverse('team_detail_delete', args = [self.test_teams[tid].id]), req_body)
+            self.assertEqual(resp.status_code, 200)
+            data = json.loads(resp.content)
+            self.assertEqual(data['error_code'], res_code)
         

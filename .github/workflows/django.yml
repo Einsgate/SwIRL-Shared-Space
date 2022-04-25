@@ -53,21 +53,20 @@ jobs:
         run: |
           pipenv install --deploy --dev
 
-      - name: Run tests
+      - name: Run tests and generate report
         run: |
-          pipenv run python manage.py test
+          pipenv run coverage run --source='.' manage.py test
+          pipenv run coverage report
+          pipenv run coverage xml 
         env:
           TEST_DB_HOST: localhost
           TEST_DB_NAME: sharedspace
           TEST_DB_PASS: postgres
           TEST_DB_PORT: 5432
           TEST_DB_USER: postgres
-          
-      - name: Generate Report
-        run: |
-          pipenv run coverage run --source='.' manage.py test
-          pipenv run coverage report
-          pipenv run coverage xml 
+          SHARED_SPACE_ADMIN_PASSWORD: ${{ secrets.SHARED_SPACE_ADMIN_PASSWORD }}
+          SHARED_SPACE_GOOGLE_CLIENT_ID: ${{ secrets.SHARED_SPACE_GOOGLE_CLIENT_ID }}
+          SHARED_SPACE_GOOGLE_SECRET: ${{ secrets.SHARED_SPACE_GOOGLE_SECRET }}
       
       - name: Update Coverage to Codecov
         uses: codecov/codecov-action@v1

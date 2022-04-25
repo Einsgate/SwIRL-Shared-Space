@@ -16,16 +16,16 @@ urlpatterns = [
     path('usermng/deleteByRole', views.user_delete, name='user_delete'),
     path('usermng/authUser', views.authority_user, name='authority_user'),
     re_path('usermng/authUserDetail/(\d+)/', views.authority_detail, name='authority_detail'),
-    path('usermng/authUserUpdate', views.authority_udpate, name='authority_update'),
+    path('usermng/authUserUpdate', views.authority_update, name='authority_update'),
 
     #reservation
-    path('reservation/index', views.index, name='reservation_index'),
+    path('reservation/index', views.reservation_index, name='reservation_index'),
     path('reservation/index.html', views.index, name='reservation_index_html'),
     path('reservation/list', views.reservation_list, name='reservation_list'),
     path('reservation/history', views.reservation_history, name='reservation_history'),  
     path('reservation/create', views.reservation_create, name='reservation_create'),
     path('reservation/delete', views.reservation_delete, name='reservation_delete'),
-    path('zone/list', views.zone_list, name='zone_list'),
+    # path('zone/list', views.zone_list, name='zone_list'),
 
     # team list
     path('team/view', views.team_view, name='team_view'), 

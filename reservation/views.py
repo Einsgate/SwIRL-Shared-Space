@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse,HttpResponseRedirect
 from django.template import loader
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import PermissionDenied
 
 import json
 from django.utils.dateparse import parse_datetime
@@ -11,21 +12,59 @@ from django.core import serializers
 from .models import *
 from .errors import *
 from .const import *
+from .utils import *
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 
 from django.core.mail import send_mail
 
 @login_required
-def index(request):
+def index(request, nav_idx = 1):
     zone_list = Zone.list_all()
+
+    is_leader_or_admin = False
+    if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
+        is_leader_or_admin = True
+        teams = Team.list_all()
+    else:
+        teams = Team.list_all(request.user.id)
+        for team in teams:
+            if request.user.id == team.leader_id.id:
+                is_leader_or_admin = True
+            
+    # Check if the user has the Google token
+    token = SocialToken.objects.filter(account__user = request.user)
+    has_google_token = (len(token) != 0)
+            
+    # Navigation bar configuration
+    left_nav = LeftNav.findById(nav_idx)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
     return render(request, "index.html", {
-        "zone_list": zone_list,
+        "is_leader_or_admin": is_leader_or_admin,   # If the resquest user is a team leader or an admin/staff
+        "has_google_token": has_google_token,       # If the user has a Google token (so that it can sync reservations to its Google Calendar)
+        "teams": teams,                             # List all teams that the user can make a reservation for
+        "zone_list": zone_list,                     # List all zones of the space
+        "warning_code": WARNING_RESERVATION_CONFLICT_CODE,  # Warning error code for conflicted reservation
+        "resv_type_req_quiet": RESV_TYPE_REQ_QUIET,         # The encoding for reservation type = require quieteness
+        "resv_type_noisy": RESV_TYPE_NOISY,                 # The encoding for reservation type = noisy
+        "resv_type_not_req_quiet": RESV_TYPE_NOT_REQ_QUIET, # The encoding for reservation type = not require quietness
     })
+
+@login_required
+def reservation_index(request):
+    # Same page with different navigation bar content
+    return index(request, 4)
 
 @login_required
 def usermng_staff(request):
     staff_list = User.list_staff(ROLE_STAFF)
+
+    left_nav = LeftNav.findById(2)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
     return render(request, "staff_index.html", {
         "staff_list": staff_list,
     })
@@ -74,7 +113,7 @@ def authority_detail(request, id):
     })
 
 @login_required
-def authority_udpate(request):
+def authority_update(request):
     team_list = Team.list_all(0)
     if request.method == 'GET':
         params = request.GET
@@ -101,6 +140,11 @@ def authority_udpate(request):
 def authority_user(request):
     all_user = User.list_all(0)
     team_list = Team.list_all(0)
+
+    left_nav = LeftNav.findById(3)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
     if request.method == 'GET':
         params = request.GET
 
@@ -130,49 +174,92 @@ def authority_user(request):
 #}
 @csrf_exempt 
 def reservation_create(request):
-    try:
+    # try:
         if request.method == 'POST':
             #print(str(request.body))
             params = json.loads(request.body)
             #print(params)
             # Check required fields
-            if 'zone_id' not in params or 'zone_name' not in params or 'is_long_term' not in params or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params or 'user_id' not in params:
+            if 'team_id' not in params or 'zone_id' not in params or 'zone_name' not in params  or 'title' not in params or 'reservation_type' not in params or 'start_time' not in params or 'end_time' not in params:
                 return JsonResponse({
                     "error_code": ERR_MISSING_REQUIRED_FIELD_CODE,
                     "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG
                 })
                 
+            # Get the team instance
+            print("team_id = ", params['team_id'])
+            try:
+                team = Team.objects.get(id = params['team_id'])
+            except Exception as e:
+                return JsonResponse({
+                    "error_code": ERR_VALUE_ERROR_CODE,
+                    "error_msg": ERR_VALUE_ERROR_MSG
+                })
             
             # Validate fields
-            reservation = Reservation(zone_id = params['zone_id'], zone_name = params['zone_name'], is_long_term = params['is_long_term'], title = params['title'], reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
-                end_time = parse_datetime(params['end_time']), user_id = params['user_id'])
+            reservation = Reservation(zone_id = params['zone_id'], zone_name = params['zone_name'], title = params['title'], description = params.get('description', ""), reservation_type = params['reservation_type'], start_time = parse_datetime(params['start_time']),
+                end_time = parse_datetime(params['end_time']), user_id = request.user, team_id = team)
             if not reservation.is_valid():
                 return JsonResponse({
                     "error_code": ERR_VALUE_ERROR_CODE,
                     "error_msg": ERR_VALUE_ERROR_MSG
                 })
-                
+                        
             # Check conflicts
-            if reservation.has_confliction():
+            conflict, quietness_conflict, training_conflict = reservation.has_confliction()
+            if conflict:
                 return JsonResponse({
                     "error_code": ERR_RESERVATION_CONFLICT_CODE,
                     "error_msg": ERR_RESERVATION_CONFLICT_MSG
                 })
+            elif (quietness_conflict or training_conflict) and not params.get('ignore_warning', False):
+                return JsonResponse({
+                    "error_code": WARNING_RESERVATION_CONFLICT_CODE,
+                    "error_msg": WARNING_RESERVATION_CONFLICT_MSG,
+                    "quietness_conflict": quietness_conflict,
+                    "training_conflict": training_conflict
+                })
 
             # Create reservation
             reservation.save()
+            
+            # Check if syncing to Google Calendar is needed
+            if params.get('sync_google_calender', False):
+                # Get team members
+                team_members = TeamMember.get_team_members(team)
+                
+                # Create Google Calendar event
+                service = connect_to_calendar(request)
+                if service:
+                    create_event(service, reservation, team_members, params.get('send_notification', False))
+                    return JsonResponse({
+                        "error_code": 0,
+                        "id": reservation.id,
+                    })
+                else:
+                    return JsonResponse({
+                        "error_code": ERR_INTERNAL_ERROR_CODE,
+                        "error_message": "Cannot connect to Google Calendar",
+                    })
+                
+            
             return JsonResponse({
                 "error_code": 0,
                 "id": reservation.id
             })
-    except Exception as e:
-        return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_message": str(e),
-        })
+    # except Exception as e:
+    #     return JsonResponse({
+    #         "error_code": ERR_INTERNAL_ERROR_CODE,
+    #         "error_message": str(e),
+    #     })
 
 def reservation_history(request):
     reservations = Reservation.list_all(0)
+
+    left_nav = LeftNav.findById(5)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+
     return render(request, "reservation_history.html", {
        "reservations": reservations,
     })
@@ -196,8 +283,8 @@ def reservation_list(request):
                 "description": r.description,
                 "zone_id": r.zone_id,
                 "zone_name": r.zone_name,
-                "user_id": r.user_id,
-                "team_id": r.team_id,
+                "user_id": r.user_id.id,
+                "team_id": r.team_id.id,
                 "is_long_term": r.is_long_term,
                 "start_time": r.start_time,
                 "end_time": r.end_time,
@@ -227,25 +314,25 @@ def reservation_delete(request):
             "error_code": 0,
         })
 
-@login_required
-def zone_list(request):
-    if request.method == 'GET':
-        zones = Zone.list_all()
-        results = []
+# @login_required
+# def zone_list(request):
+#     if request.method == 'GET':
+#         zones = Zone.list_all()
+#         results = []
         
-        for zone in zones:
-            results.append({
-                "id": zone.id,
-                "name": zone.name,
-                "is_noisy": zone.is_noisy,
-                "description": zone.description,
-                "zone_type": zone.zone_type,
-            })
+#         for zone in zones:
+#             results.append({
+#                 "id": zone.id,
+#                 "name": zone.name,
+#                 "is_noisy": zone.is_noisy,
+#                 "description": zone.description,
+#                 "zone_type": zone.zone_type,
+#             })
         
-        return JsonResponse({
-            "error_code": 0,
-            "results": results,
-        })
+#         return JsonResponse({
+#             "error_code": 0,
+#             "results": results,
+#         })
 
 # Team view
 # Show the list of teams in page /team/view/
@@ -257,11 +344,17 @@ def team_view(request):
         if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
             users = User.list_not_admin_staff()
             teams = Team.list_all()
-            team_list_title = 'Team List'
+            team_list_title = 'Team Management'
+            left_nav = LeftNav.findById(10)
         else:
             users = []
             teams = Team.list_all(request.user.id)
             team_list_title = 'My Teams'
+            left_nav = LeftNav.findById(11)
+
+        request.session['fid'] = left_nav.fid
+        request.session['cid'] = left_nav.id
+    
         return render(request, "manage-team/team_list.html", {
             "users": users, 
             "teams": teams,
@@ -363,10 +456,11 @@ def team_view_delete(request):
             "error_code": 0,
         })        
 
-# update the name and leader of a team
+# update the name and leader of a team (admin or staff)
 @csrf_exempt
 def team_view_update(request):
     try:
+        # Generate the member list. This is to generate the select options where a new leader can be chosen from.
         if request.method == 'GET':
             # Check the authority
             if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
@@ -375,7 +469,14 @@ def team_view_update(request):
                     "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
                 })
                 
-            team_id = request.GET.get('team_id')
+            params = request.GET
+            if 'team_id' not in params:
+                return JsonResponse({
+                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+                });
+                
+            team_id = params['team_id']
             team = Team.query(team_id)
             teammembers = TeamMember.get_team_members(team_id)
             team_name = team.name;
@@ -383,7 +484,9 @@ def team_view_update(request):
                 team_leader_id = -1
             else:
                 team_leader_id = team.leader_id.id
-            teammembers_user_id = [[teammember.user_id.id,  teammember.user_id.username, teammember.user_id.email] for teammember in teammembers]
+                
+            teammembers_user_id = [[teammember.user_id.id, teammember.user_id.username, teammember.user_id.email] for teammember in teammembers]
+            
             return JsonResponse({
                 "error_code": 0, 
                 "team_name": team_name, 
@@ -391,7 +494,9 @@ def team_view_update(request):
                 "members": teammembers_user_id, 
             });
 
+        # This is to change the name and the leader of some team.
         if request.method == 'POST':
+            # Check the authority
             if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
                 return JsonResponse({
                     "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
@@ -408,39 +513,53 @@ def team_view_update(request):
             team = Team.query(params['team_id']);
             updated = False; 
             
-            # update the team name
+            # Update the team name
             new_team_name = params['team_name']
+            # If the team_name is empty, it won't report error and keep the name unchanged. 
             if len(new_team_name) == 0:
                 new_team_name = team.name
             elif new_team_name != team.name:
                 updated = True
                 team.name = new_team_name
 
-            # update the leader
-            new_team_leader_id = params['team_leader_id']
-            if len(new_team_leader_id) == 0:
-                new_team_leader_id = team.leader_id.id
-            elif new_team_leader_id != "-1":
+            # Update the leader
+            new_team_leader_id = -1 if len(params['team_leader_id']) == 0 else int(params['team_leader_id']) 
+            new_team_leader_username = ''
+            
+            if ~new_team_leader_id: 
+                # If the leader_id is an invalud number, it'll throw an exception at User.query.
                 new_team_leader = User.query(new_team_leader_id)
-                if new_team_leader.role_id.id in (ROLE_ADMIN, ROLE_STAFF):
+                # if new_team_leader == None:
+                #     return JsonResponse({
+                #         "error_code": ERR_LEADER_INVALID_CODE, 
+                #         "error_msg": ERR_LEADER_INVALID_MSG, 
+                #     });
+                    
+                # The leader can't be a user not in this team
+                if TeamMember.get_by_team_members(team_id = team.id, user_id = new_team_leader_id) == None:
                     return JsonResponse({
-                        "error_code": ERR_ADMIN_STAFF_TEAM_LEADER_CODE, 
-                        "error_msg": ERR_ADMIN_STAFF_TEAM_LEADER_MSG, 
+                        "error_code": ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_CODE, 
+                        "error_msg": ERR_LEADER_NOT_A_MEMBER_OF_THE_TEAM_MSG, 
                     });
                 
-                new_team_username = new_team_leader.username
+                new_team_leader_username = new_team_leader.username
                 if team.leader_id == None or new_team_leader_id != team.leader_id.id:
                     updated = True
                     team.leader_id = new_team_leader
+            else:
+                # If the team_leader.id isn't empty, it won't report error and keep the leader_id unchanged. 
+                if team.leader_id != None:
+                    new_team_leader_id = team.leader_id.id
+                    new_team_leader_username = team.leader_id.username
 
-            # update the database only if some field has been changed
+            # Update the database only if some field has been changed
             if updated:
                 team.save();
 
             return JsonResponse({
                 "error_code": 0,
                 "new_team_leader_id": new_team_leader_id, 
-                "new_team_leader_username": new_team_username, 
+                "new_team_leader_username": new_team_leader_username, 
             });
     except Exception as e:
         return JsonResponse({
@@ -449,9 +568,15 @@ def team_view_update(request):
         })
 
 # Team details
-# Show all team members.
+# Show all team members. (admin or staff or team members)
 def team_detail(request, team_id):
+    # Check whether request.user is a super user or some member in the team
+    if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF) and TeamMember.get_by_team_members(team_id = team_id, user_id = request.user.id) == None: 
+        raise PermissionDenied
+        
+    # Display all members in the team.
     members = TeamMember.get_team_members(team_id)
+    # Display all users neither super users nor members of the team in the member invitation list.
     not_members = User.list_not_members(team_id)
     team = Team.query(team_id)
     team_name = team.name
@@ -489,6 +614,17 @@ def team_detail_update(request, team_id):
                 })
                 
             for user_id in params['selected_members']:
+                # If there's no such a user, it will throw an exception.
+                user = User.query(user_id)
+                # The role of new added members shouldn't be super users.
+                if user.role_id.id in (ROLE_ADMIN, ROLE_STAFF):
+                    return JsonResponse({
+                        "error_code": ERR_ADD_INVALID_MEMBER_CODE, 
+                        "error_msg": ERR_ADD_INVALID_MEMBER_MSG, 
+                    })
+                
+            # Although there might be duplicated or existing users in the list, we only add them once and only if they are currently not in the team.
+            for user_id in params['selected_members']:
                 TeamMember.objects.get_or_create(user_id = User.query(user_id), team_id = Team.query(team_id))
                 
             return JsonResponse({"error_code": 0,});
@@ -498,6 +634,7 @@ def team_detail_update(request, team_id):
             "error_msg": str(e),
         })
 
+# Delete a member in the team (admin or staff or the team leader)
 @csrf_exempt  
 def team_detail_delete(request, team_id): 
     if request.method == 'GET':
@@ -523,7 +660,7 @@ def team_detail_delete(request, team_id):
         # Check the authority
         if request.user.role_id.id not in (ROLE_ADMIN, ROLE_STAFF):
             # The team leader can't delete the leader of the team (which is himself or herself).
-            if team.leader_id == teammember.user_id or request.user.id != team.leader_id.id: 
+            if request.user.id != team.leader_id.id or team.leader_id.id == teammember.user_id.id: 
                 return JsonResponse({
                     "error_code": ERR_LACK_OF_AUTHORITY_CODE, 
                     "error_msg": ERR_LACK_OF_AUTHORITY_MSG, 
@@ -543,10 +680,17 @@ def team_detail_delete(request, team_id):
 @login_required
 def training_view(request):
     if request.method == 'GET':
+        left_nav = LeftNav.findById(12)
+        request.session['fid'] = left_nav.fid
+        request.session['cid'] = left_nav.id
+
         if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
             training = Training.list_all()
-            training_list_title = 'Training List'
+            training_list_title = 'Training Management'
+        zone_list = Zone.list_all()
+
         return render(request, "training_list.html", {
+            "zone_list": zone_list,
             "training": training,
             "training_list_title": training_list_title,
         })
@@ -572,9 +716,9 @@ def training_result_update(request):
                 "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
                 "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
             });
-        print(params)
         training = TrainingDetail.findById(params['id'])
         training.training_result = params['status']
+        training.training_status = 3
         training.save()
 
         return JsonResponse({
@@ -614,6 +758,8 @@ def training_update(request):
         training = Training.findById(params['id'])
         training.training_status = 2
         training.save()
+        #update details
+        TrainingDetail.updateByTrainingId(training.id, 2)
 
         return JsonResponse({
             "error_code": 0,
@@ -621,33 +767,32 @@ def training_update(request):
 
 @csrf_exempt 
 def training_create(request):
-    try:
-        if request.method == 'POST':
-            # Check required fields
-            params = json.loads(request.body)
-
-            if 'name' not in params or 'startDate' not in params or 'endDate' not in params:
-                return JsonResponse({
-                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
-                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
-                });
-            training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id =0, instructor_id = 0)
-            training.save()
+    if request.method == 'POST':
+        # Check required fields
+        params = json.loads(request.body)
+        if 'name' not in params or 'startDate' not in params or 'endDate' not in params:
             return JsonResponse({
-                "error_code": 0,
-                "training_id": training.id,
-                "training_name": training.name,
-                "training_description": training.description,
-                "training_instructor_id": training.instructor_id,
-                "training_start_time": training.start_time,
-                "training_end_time": training.end_time,
-                "training_zone_id": training.zone_id
-            })
-    except Exception as e:
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+            });
+
+        zone = Zone.findById(params['zoneId'])
+        training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id =zone, instructor_id = 0)
+        training.save()
+
+        #send mail to conflict reservation
+        conflict_list = Reservation.conflictWithTraining(training)
+        for r in conflict_list:
+            send_mail('Reservation Conflict', 'Your Reservation is conflicted by a training['+training.name+']', '394887350@qq.com', [r.user_id.email], fail_silently=False)
+
         return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_msg": str(e),
-            # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
+            "error_code": 0,
+            "training_id": training.id,
+            "training_name": training.name,
+            "training_description": training.description,
+            "training_instructor_id": training.instructor_id,
+            "training_start_time": training.start_time,
+            "training_end_time": training.end_time
         })
 
 @csrf_exempt
@@ -655,23 +800,27 @@ def training_apply(request):
     if request.method == 'GET':
         params = request.GET
     key_word = "";
-    my_training = TrainingDetail.list_all(request.user.id);
+    my_training = TrainingDetail.list_all(request.user.id)
     oldIds = []
     for t in my_training:
         oldIds.append(t.training_id.id)
 
-    if 'keyWord' in params:
+    if 'keyWord' in params and len(params['keyWord']) >0 :
         key_word = params['keyWord']
         training_list = Training.findListByName(key_word)
     else:
-        training_list = Training.list_exception(oldIds);
+        training_list = Training.list_exception(oldIds)
 
-    my_training_list_title = 'Training Apply'
+    my_training_list_title = 'Training Registration'
     training_name = ""
 
     for r in training_list:
         training_name += r.name+","
-
+    
+    left_nav = LeftNav.findById(14)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
+    
     return render(request, "training_apply.html", {
         "key_word": key_word,
         "training_list": training_list,
@@ -682,7 +831,10 @@ def training_apply(request):
 @login_required
 def training_my_training(request):
     training = TrainingDetail.list_all(request.user.id)
-    training_list_title = 'My Training List'
+    training_list_title = 'Registered Training'
+    left_nav = LeftNav.findById(13)
+    request.session['fid'] = left_nav.fid
+    request.session['cid'] = left_nav.id
     return render(request, "training_my_training.html", {
         "training_list": training,
         "training_list_title": training_list_title,
@@ -690,30 +842,24 @@ def training_my_training(request):
 
 @csrf_exempt
 def training_apply_create(request):
-    try:
-        if request.method == 'GET':
-            # Check required fields
-            params = request.GET
+    if request.method == 'GET':
+        # Check required fields
+        params = request.GET
 
-        if 'training_id' not in params:
-            return JsonResponse({
-                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
-                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
-            })
-
-        user = User.findUserById(request.user.id)
-        training = Training.findById(params['training_id'])
-        my_training = TrainingDetail(user_id = user, training_id = training)
-        my_training.save()
-
+    if 'training_id' not in params:
         return JsonResponse({
-            "error_code": 0,
+            "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+            "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
         })
-    except Exception as e:
-        return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_msg": str(e),
-        })
+
+    user = User.findUserById(request.user.id)
+    training = Training.findById(params['training_id'])
+    my_training = TrainingDetail(user_id = user, training_id = training)
+    my_training.save()
+
+    return JsonResponse({
+        "error_code": 0,
+    })
 
 @csrf_exempt
 def training_apply_delete(request):

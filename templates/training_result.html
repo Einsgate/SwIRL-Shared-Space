@@ -11,7 +11,7 @@
     <link href="/static/css/plugins/footable/footable.core.css" rel="stylesheet">
     <link href="/static/css/animate.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
-    
+    <link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
 </head>
 
 <body>
@@ -50,7 +50,7 @@
 	                                <tr>
 	                                    <th data-hide="phone">Member Name</th>
 	                                    <th data-hide="phone">Email</th>
-	                                    <th data-hide="phone">Register Time</th>
+	                                    <th data-hide="phone">Registration Time</th>
 	                                    <th data-hide="phone">Status</th>
 	                                    <th data-hide="phone">Result</th>
 	                                </tr>
@@ -61,13 +61,23 @@
 	                                    <td>{{t.user_id.username}}</td>
 	                                    <td>{{t.user_id.email}}</td>
 	                                    <td>{{t.registration_time}}</td>
-	                                    <td><span class="label label-primary"> Finished </span></td>
+	                                    <td>
+	                                    {% if t.training_status == 2 %}
+	                                    	<span class="label label-danger">Finished</span>
+	                                    {% elif t.training_status == 3 %}
+	                                    	<span class="label label-success"> Graded </span>
+	                                   	{% elif t.training_status == 1 %}
+	                                    	<span class="label label-primary">In progress</span>
+	                                   	{% else %}
+	                                   		<span class="label label-warning">Not Start</span>
+	                                    {% endif %}
+	                                    </td>
 	                                    <td>
 				                        <div class="col-sm-10">
 					                        <select class="sel" name="t_result" id="trainResult_{{t.id}}" trainId="{{t.id}}">
 											  <option value="0" {% if t.training_result == 0 %} selected="selected" {% endif %}>Not Graded</option>
-											  <option value="1" {% if t.training_result == 1 %} selected="selected" {% endif %}>Fault</option>
-											  <option value="2" {% if t.training_result == 2 %} selected="selected" {% endif %}>Passed</option>
+											  <option value="1" {% if t.training_result == 1 %} selected="selected" {% endif %}>Fail</option>
+											  <option value="2" {% if t.training_result == 2 %} selected="selected" {% endif %}>Pass</option>
 											</select>
 				                        </div>
 	                                    </td>
@@ -111,31 +121,43 @@
 
     <!-- Typehead -->
     <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
-
+    <!-- Sweet alert -->
+    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
     <script>
 	    $('.sel').change(function(){
 	        var sel = $(this);
 	        var tid = sel.attr("trainId");
 	        var status = sel.val();
-	    	if(confirm("Are you sure to Apply?")){
-		        $.ajax({
-		            url:'{% url "training_result_update" %}',
-	                data: JSON.stringify({ 
-	                    id: tid,
-	                    status: status
-	                }),
-		            type: "POST",
-		            success:function(msg){
-		            	//$(location).attr('href','{% url "training_apply" %}');
-		            	console.log(msg);
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Apply Operation");
-			}
+	        swal({
+                title: "Are you sure to Grade this record ?",
+                text: "You still have chance to change this record!",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Yes, GRADE it!",
+                cancelButtonText: "No, Cancel !",
+                closeOnConfirm: false
+            },function (isConfirm) {
+                if (isConfirm) {
+	            $.ajax({
+	                url:'{% url "training_result_update" %}',
+	                  data: JSON.stringify({ 
+	                      id: tid,
+	                      status: status
+	                  }),
+	                type: "POST",
+	                success:function(msg){
+	                	window.location.reload();
+	                },
+	                error:function(xhr,textstatus,thrown){
+	                }
+	            });
+                swal("GRADED!", "This record has been GRADE.", "success");
+                return true;
+                } else {
+                    swal("Cancelled", "This record is safe :)", "error");
+                }
+            });
 	    });
 
     </script>

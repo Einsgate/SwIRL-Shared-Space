@@ -2,6 +2,7 @@
 
 from django.db import migrations
 from reservation.models import *
+import os
 
 def init(apps, schema_editor):
     # We can't import the Person model directly as it may be a newer
@@ -25,49 +26,49 @@ def init(apps, schema_editor):
     role_team_leader = Role.objects.create(id = 2, role_name = "team leader")
     role_member = Role.objects.create(id = 3, role_name = "member")
     
-    # Test data
     # Default admin
+    SHARED_SPACE_ADMIN_PASSWORD = os.environ['SHARED_SPACE_ADMIN_PASSWORD']
     superuser = User(username = 'admin', email = 'admin@admin.net', is_active = True, is_superuser = True, is_staff = True, role_id = role_admin)
-    superuser.set_password('admin')
+    superuser.set_password(SHARED_SPACE_ADMIN_PASSWORD)
     superuser.save()
     
-    test_member_1 = User(username = 'test_member_1', email = 'test_member_1@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = role_member)
-    test_member_1.set_password('123')
-    test_member_1.save()
+    # Google auth config
+    from django.contrib.sites.models import Site
+    from allauth.socialaccount.models import SocialApp, SocialAccount
     
-    test_member_2 = User(username = 'test_member_2', email = 'test_member_2@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = role_member)
-    test_member_2.set_password('123')
-    test_member_2.save()
+    SHARED_SPACE_GOOGLE_CLIENT_ID = os.environ['SHARED_SPACE_GOOGLE_CLIENT_ID']
+    SHARED_SPACE_GOOGLE_SECRET = os.environ['SHARED_SPACE_GOOGLE_SECRET']
     
-    #UserModel = apps.get_model('reservation', 'User')
-    User.objects.create(username = "test_admin_1", email = "test_admin_1@tamu.edu", role_id = role_admin)
-    User.objects.create(username = "test_admin_2", email = "test_admin_2@tamu.edu", role_id = role_admin)
-    User.objects.create(username = "test_staff_1", email = "test_staff_1@tamu.edu", role_id = role_staff)
-    User.objects.create(username = "test_staff_2", email = "test_staff_2@tamu.edu", role_id = role_staff)
-    #User.objects.create(id = 3, username = "test_lead_1", email = "test_lead_1@tamu.edu", role_id = 2)
-    #User.objects.create(id = 3, username = "test_lead_2", email = "test_lead_2@tamu.edu", role_id = 2)
-    #user5 = UserModel.objects.create(username = "test_member_1", email = "test_member_1@tamu.edu", role_id = 2)
-    test_member_1 = User.objects.get(username = "test_member_1")
-    test_member_2 = User.objects.get(username = "test_member_2")
-    test_member_3 = User.objects.create(username = "test_member_3", email = "test_member_3@tamu.edu", role_id = role_member)
-    User.objects.create(username = "test_member_4", email = "test_member_4@tamu.edu", role_id = role_member)
-    User.objects.create(username = "test_member_5", email = "test_member_5@tamu.edu", role_id = role_member)
-
-
-   # Team = apps.get_model('reservation', 'Team')
-    team1 = Team.objects.create(name = "test_team_1", leader_id = test_member_1)
-    Team.objects.create(name = "test_team_2")
+    social_app = SocialApp.objects.create(provider = 'google', name = 'sharedspace', 
+        client_id = SHARED_SPACE_GOOGLE_CLIENT_ID,
+        secret = SHARED_SPACE_GOOGLE_SECRET)
     
-    #TeamMember = apps.get_model('reservation', 'TeamMember')
-    TeamMember.objects.create(team_id = team1, user_id = test_member_1)
-    TeamMember.objects.create(team_id = team1, user_id = test_member_2)
-    TeamMember.objects.create(team_id = team1, user_id = test_member_3)
-
+    site = Site.objects.create(domain='sharedspace.com', name='sharedspace.com')
+    social_app.sites.add(site) # set site 
+            
+        
+    #leftNav
+    LeftNav.objects.create(id = 1, name = "Home", url = "index", fid=0, description = "")
+    LeftNav.objects.create(id = 2, name = "Staff Management", url = "/usermng/staff", fid=1, description = "")
+    LeftNav.objects.create(id = 3, name = "Authorization", url = "/usermng/authUser", fid=1, description = "")
+    LeftNav.objects.create(id = 4, name = "Make Reservations", url = "index", fid=3, description = "")
+    LeftNav.objects.create(id = 5, name = "Reservation History", url = "/reservation/history", fid=3, description = "")
+    LeftNav.objects.create(id = 6, name = "Overall", url = "statOverall", fid=2, description = "")
+    LeftNav.objects.create(id = 7, name = "Reserve Statistics", url = "statReserve", fid=2, description = "")
+    LeftNav.objects.create(id = 8, name = "Training Statistics", url = "statTraining", fid=2, description = "")
+    LeftNav.objects.create(id = 9, name = "Register Statistics", url = "statRegister", fid=2, description = "")
+    LeftNav.objects.create(id = 10, name = "Team Management", url = "/team/view", fid=4, description = "")
+    LeftNav.objects.create(id = 11, name = "My Teams", url = "/team/view", fid=4, description = "")
+    LeftNav.objects.create(id = 12, name = "Training Management", url = "/training/view", fid=5, description = "")
+    LeftNav.objects.create(id = 13, name = "Registered Training", url = "/training/apply/myTrainning", fid=5, description = "")
+    LeftNav.objects.create(id = 14, name = "Training Registration", url = "/training/apply", fid=5, description = "")
 
 class Migration(migrations.Migration):
 
     dependencies = [
         ('reservation', '0001_initial'),
+        ('socialaccount', '0003_extra_data_default_dict'),
+        ('sites', '0002_alter_domain_unique'),
     ]
 
     operations = [

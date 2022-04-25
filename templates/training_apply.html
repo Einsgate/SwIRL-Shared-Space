@@ -11,7 +11,7 @@
     <link href="/static/css/plugins/footable/footable.core.css" rel="stylesheet">
     <link href="/static/css/animate.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
-    
+    <link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
 </head>
 
 <body>
@@ -25,7 +25,10 @@
                 <h2>{{ training_list_title }}</h2>
                 <ol class="breadcrumb">
                     <li>
-                        <a href="/index.html">Home</a>
+                        <a href='{% url "index" %}'>Home</a>
+                    </li>
+                    <li>
+                        Training
                     </li>
                     <li class="active">
                         <strong>{{ training_list_title }}</strong>
@@ -43,7 +46,7 @@
 	                    <div class="ibox float-e-margins">
 	                        <div class="ibox-content">
 	                            <p>
-	                                Search By Training Name <span class="text-muted">(type 'name')</span>
+	                                Search By Training Name 
 	                            </p>
 	                            <form id="training_search" action="{% url 'training_apply' %}">
 									<div class="input-group"><input type="text" name="keyWord" id="keyWord" value="{{key_word}}" placeholder="name..." class="typeahead_1 form-control">
@@ -66,10 +69,11 @@
                             <table class="footable table table-stripped toggle-arrow-tiny" data-page-size="15">
                                 <thead>
 	                                <tr>
-	                                    <th data-hide="phone">Training</th>
-	                                    <th data-hide="all">Description</th>
+	                                    <th data-hide="phone">Training Name</th>
+	                                    <th data-hide="phone">Description</th>
 	                                    <th data-hide="phone">Start Time</th>
 	                                    <th data-hide="phone">End Time</th>
+	                                    <th data-hide="phone">Status</th>
 	                                    <th class="text-right">Action</th>
 	                                </tr>
                                 </thead>
@@ -80,9 +84,20 @@
 	                                    <td>{{t.description}}</td>
 	                                    <td>{{t.start_time}}</td>
 	                                    <td>{{t.end_time}}</td>
+	                                    <td>
+	                                    {% if t.training_status == 2 %}
+	                                    	<span class="label label-danger">Finished</span>
+	                                    {% elif t.training_status == 3 %}
+	                                    	<span class="label label-success"> Graded </span>
+	                                   	{% elif t.training_status == 1 %}
+	                                    	<span class="label label-primary">In progress</span>
+	                                   	{% else %}
+	                                   		<span class="label label-warning">Not Start</span>
+	                                    {% endif %}
+	                                    </td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
-	                                            <button id="applySubmit" onclick="applyItem('{{t.id}}')" class="btn-white btn btn-xs">Apply</button>
+	                                            <button id="applySubmit" onclick="applyItem('{{t.id}}')" class="btn btn-primary btn-sm applySubmit">Register</button>
 	                                        </div>
 	                                    </td>
 	                                </tr>
@@ -125,6 +140,8 @@
 
     <!-- Typehead -->
     <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
+    <!-- Sweet alert -->
+    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
 
     <script>
 		$(document).ready(function(){
@@ -136,21 +153,38 @@
 		});
 
 	    function applyItem(id) {
-			if(confirm("Are you sure to Apply?")){
-		        $.ajax({
-		            url:'{% url "training_apply_create" %}',
-		            data:{training_id: id},
-		            type: "GET",
-		            success:function(msg){
-		            	$(location).attr('href','{% url "training_my_training" %}');
-		            },
-		            error:function(xhr,textstatus,thrown){
-		            }
-		        });
-		        return true;
-			}else{
-				alert("Cancel Apply Operation");
-			}
+	        swal({
+                title: "Are you sure to Register ?",
+                text: "You will see this record at your Registered Training!",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Yes, APPLY it!",
+                cancelButtonText: "No, Cancel !",
+                closeOnConfirm: false,
+                closeOnCancel: true },
+            function (isConfirm) {
+                if (isConfirm) {
+	            $.ajax({
+	                url:'{% url "training_apply_create" %}',
+	                data:{training_id: id},
+	                type: "GET",
+	                success:function(msg){
+	                	swal({
+                            title:"Register Success",
+                            text: "Training has been Registered",
+                            type: "success",
+                            confirmButtonText: "Confirm",
+                        }, function () {
+                            window.location.reload();
+                        });
+	                },
+	                error:function(xhr,textstatus,thrown){
+	                }
+	            });
+                swal("Success!", "Your register has been ACCEPTED.", "success");
+                }
+            });
 		}
     </script>
 

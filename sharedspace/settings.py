@@ -168,9 +168,18 @@ LOGIN_REDIRECT_URL = '/'
 
 # Additional configuration settings
 SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_STORE_TOKENS = True
 ACCOUNT_LOGOUT_ON_GET= True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_REQUIRED = True
+
+#Email config
+EMAIL_BACKEND ='django.core.mail.backends.smtp.EmailBackend' 
+EMAIL_HOST = 'smtp.qq.com' # SMTP address 
+EMAIL_PORT = 25 # SMTP Port 
+EMAIL_HOST_USER = '394887350@qq.com' #sender email 
+EMAIL_HOST_PASSWORD = 'rgtycnixjkthcbci' #Authority Code not email password 
+EMAIL_USE_TLS = False #using safe mode or not
 
 # Provider specific settings
 SOCIALACCOUNT_PROVIDERS = {
@@ -178,15 +187,11 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': [
             'profile',
             'email',
+            'https://www.googleapis.com/auth/calendar',
         ],
         'AUTH_PARAMS': {
-            'access_type': 'online',
+            'access_type': 'offline',
         },
-        'APP': {
-            'client_id': '509460754745-vr7n801bgqd8gm0nvv7v5h4accucar00.apps.googleusercontent.com',
-            'secret': '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',
-            'key': ''
-        }
     }
 }
 

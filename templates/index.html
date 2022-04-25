@@ -14,6 +14,7 @@
 
     <link href="/static/css/plugins/fullcalendar/fullcalendar.css" rel="stylesheet">
     <link href="/static/css/plugins/fullcalendar/fullcalendar.print.css" rel='stylesheet' media='print'>
+    <link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">
 
 </head>
 
@@ -31,13 +32,13 @@
                 <h2>Reservation</h2>
                 <ol class="breadcrumb">
                     <li>
-                        <a href="index.html">Home</a>
+                        <a href='{% url "index" %}'>Home</a>
                     </li>
                     <li>
-                        <a>Reservation</a>
+                        Reservation
                     </li>
                     <li class="active">
-                        <strong>Reservation History</strong>
+                        <strong>Make Reservations</strong>
                     </li>
                 </ol>
             </div>
@@ -45,8 +46,6 @@
         </div>
         
         <!--<div id="page-wrapper" class="gray-bg" style="min-height: 1702.06px;">-->
-            
-            
             <div class="wrapper wrapper-content">
                 <div class="row animated fadeInDown">
                     <div class="col-lg-12">
@@ -54,8 +53,8 @@
                             <div class="ibox-title">
                                 <h5>Layout</h5>
                             </div>
-                            <div class="ibox-content">
-                                <img src="/static/img/layout.jpg" alt="layout">
+                            <div class="ibox-content" align="center">
+                                <img src="/static/img/layout.jpg" style="width:90%;height:90%;" alt="" />
                             </div>
                         </div>
                     </div>
@@ -78,12 +77,12 @@
                                 <div id="external-events">
                                     <p>Drag an event and enter the calendar.</p>
                                     {% for zone in zone_list %}
-                                        <!--<div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; z-index: auto; left: 0px; top: 0px; background-color: #f8ac59;" data-color='#f8ac59'>Zone 1</div>-->
                                         <div class="external-event navy-bg ui-draggable ui-draggable-handle" style="position: relative; text-align: center; background-color: #00BFFF;" data-color='#00BFFF' id='{{ zone.id }}'>{{ zone.name }}</div>
                                     {% endfor %}
                                 </div>
                             </div>
                         </div>
+                        {% if is_leader_or_admin %}
                         <div class="ibox float-e-margins">
                             <div class="ibox-title">
                                 <h5>Reservation</h5>
@@ -91,42 +90,61 @@
                                     <a class="collapse-link">
                                         <i class="fa fa-chevron-up"></i>
                                     </a>
-                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                                        <i class="fa fa-wrench"></i>
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-user">
-                                        <li><a href="#">Short-Term Reservation</a>
-                                        </li>
-                                        <li><a href="#">Long-Term Reservation</a>
-                                        </li>
-                                    </ul>
                                     <a class="close-link">
                                         <i class="fa fa-times"></i>
                                     </a>
                                 </div>
                             </div>
                             <div class="ibox-content">
+                                
                                 <form role="form" id="reservation-form">
-                                    <div class="form-group"><label>Title</label> <input type="text" class="form-control" id="reservation-title" placeholder="untitled"></div>
-                                    <div class="hr-line-dashed"></div>
-                                    <div class="form-group">
-                                        <label>Type</label> 
-                                        <select class="form-control m-b" id="reservation-type">
-                                            <option>closed</option>
-                                            <option>quiet</option>
-                                            <option selected="selected">open</option>
+                                    <div class="form-group" id="reservation-team-div">
+                                        <label>Team</label> 
+                                        <select class="form-control m-b" id="reservation-team">
+                                            {% for team in teams %}
+                                            <option value={{team.id}}>{{team.name}}</option>
+                                            {% endfor %}
                                         </select>
                                     </div>
-                                    <div class="hr-line-dashed"></div>
+                                    
+                                    {% if has_google_token %}
+                                    <div class="form-group" align="left">
+                                        <input type="checkbox" id="checkbox_sync" name="checkbox_sync" value="sync" onclick="sync_onclick()" checked>
+                                        <label for="checkbox_sync"> Sync to Google Calendar &nbsp &nbsp &nbsp &nbsp</label>
+                                        <input type="checkbox" id="checkbox_notify" name="checkbox_notify" value="notify" checked>
+                                        <label for="checkbox_notify"> Send notification</label>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="form-group"><label>Title</label> <input type="text" class="form-control" id="reservation-title" placeholder="untitled"></div>
+                                   
+                                    <div class="form-group" id="is-making-noise-div">
+                                        <label>Will you make noise when using the space?</label> 
+                                        <select class="form-control m-b" id="is-making-noise">
+                                            <option>Yes</option>
+                                            <option selected="selected">No</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group" id="quiet-req-div">
+                                        <label>Do you need a reservation with a quiet environment?</label> 
+                                        <select class="form-control m-b" id="quiet-req">
+                                            <option>Yes</option>
+                                            <option selected="selected">No</option>
+                                        </select>
+                                    </div>
+                               
                                     <div class="form-group"><label>Description</label> <textarea class="form-control" rows="5" id="reservation-description"></textarea> </div>
-                                    <div class="hr-line-dashed"></div>
+
                                     <div class="form-group">
                                         <button class="btn btn-primary" type="submit" id="reservation-button">Submit</button>
                                         <button class="btn btn-white pull-right" type="reset" id="reservation-reset-button">Reset</button>
                                     </div>
                                 </form>
+                                
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     <div class="col-lg-9">
                         <div class="ibox float-e-margins">
@@ -177,91 +195,6 @@
     <script src="/static/js/plugins/pace/pace.min.js"></script>
     <!-- Sparkline -->
     <script src="/static/js/plugins/sparkline/jquery.sparkline.min.js"></script>
-
-    <script>
-        // $(document).ready(function() {
-
-        //     var sparklineCharts = function(){
-        //         $("#sparkline1").sparkline([34, 43, 43, 35, 44, 32, 44, 52], {
-        //             type: 'line',
-        //             width: '100%',
-        //             height: '50',
-        //             lineColor: '#f8ac59',
-        //             fillColor: "transparent"
-        //         });
-
-        //         $("#sparkline2").sparkline([32, 11, 25, 37, 41, 32, 34, 42], {
-        //             type: 'line',
-        //             width: '100%',
-        //             height: '50',
-        //             lineColor: '#f8ac59',
-        //             fillColor: "transparent"
-        //         });
-
-        //         $("#sparkline3").sparkline([34, 22, 24, 41, 10, 18, 16,8], {
-        //             type: 'line',
-        //             width: '100%',
-        //             height: '50',
-        //             lineColor: '#1C84C6',
-        //             fillColor: "transparent"
-        //         });
-        //     };
-
-        //     var sparkResize;
-
-        //     $(window).resize(function(e) {
-        //         clearTimeout(sparkResize);
-        //         sparkResize = setTimeout(sparklineCharts, 500);
-        //     });
-
-        //     sparklineCharts();
-
-        //     var data1 = [
-        //         [0,4],[1,8],[2,5],[3,10],[4,4],[5,16],[6,5],[7,11],[8,6],[9,11],[10,20],[11,10],[12,13],[13,4],[14,7],[15,8],[16,12]
-        //     ];
-        //     var data2 = [
-        //         [0,0],[1,2],[2,7],[3,4],[4,11],[5,4],[6,2],[7,5],[8,11],[9,5],[10,4],[11,1],[12,5],[13,2],[14,5],[15,2],[16,0]
-        //     ];
-        //     $("#flot-dashboard5-chart").length && $.plot($("#flot-dashboard5-chart"), [
-        //                 data1,  data2
-        //             ],
-        //             {
-        //                 series: {
-        //                     lines: {
-        //                         show: false,
-        //                         fill: true
-        //                     },
-        //                     splines: {
-        //                         show: true,
-        //                         tension: 0.4,
-        //                         lineWidth: 1,
-        //                         fill: 0.4
-        //                     },
-        //                     points: {
-        //                         radius: 0,
-        //                         show: true
-        //                     },
-        //                     shadowSize: 2
-        //                 },
-        //                 grid: {
-        //                     hoverable: true,
-        //                     clickable: true,
-
-        //                     borderWidth: 2,
-        //                     color: 'transparent'
-        //                 },
-        //                 colors: ["#f8ac59", "#1C84C6"],
-        //                 xaxis:{
-        //                 },
-        //                 yaxis: {
-        //                 },
-        //                 tooltip: false
-        //             }
-        //     );
-
-        // });
-    </script>
-    
     <!-- jQuery UI  -->
     <script src="/static/js/plugins/jquery-ui/jquery-ui.min.js"></script>
 
@@ -270,6 +203,9 @@
 
     <!-- Full Calendar -->
     <script src="/static/js/plugins/fullcalendar/fullcalendar.min.js"></script>
+    
+    <!--<link href="/static/css/plugins/sweetalert/sweetalert.css" rel="stylesheet">-->
+    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
 
     <script>
         $(document).ready(function() {
@@ -290,12 +226,16 @@
                     editable: true
                 });
 
+                {% if is_leader_or_admin %}
+                // Draggble only when the user is the admin/staff or team leader
                 // make the event draggable using jQuery UI
                 $(this).draggable({
                     zIndex: 1111999,
                     revert: true, // will cause the event to go back to its
                     revertDuration: 0 //  original position after the drag
                 });
+                
+                {% endif %}
 
             });
 
@@ -320,12 +260,8 @@
                         jQuery.each(data.results, function (i, item) {
                             
                             var color = color_green;
-                            if (item.reservation_type == 0) {
+                            if (item.reservation_type == {{resv_type_noisy}}) { // Noisy reservations
                                 color = color_danger;
-                            } else if (item.reservation_type == 1) {
-                                color = color_warn;
-                            } else if (item.reservation_type == 2) {
-                                color = color_green;
                             }
                             results.push({
                                 title: item.zone_name,
@@ -374,22 +310,64 @@
 
         });
     </script>
-    <script type="text/javascript">
-        var cnzz_protocol = (("https:" == document.location.protocol) ? "https://" : "http://");
-        document.write(unescape("%3Cspan id='cnzz_stat_icon_1278138285'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "v1.cnzz.com/z_stat.php%3Fid%3D1278138285%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));
-    </script>
     
     <script>
+        function sync_onclick() {
+            var checkbox_sync = document.getElementById("checkbox_sync");
+            var checkbox_notify = document.getElementById("checkbox_notify")
+            if (checkbox_sync.checked == false){
+                checkbox_notify.checked = false;
+                checkbox_notify.disabled = true;
+            } else {
+                checkbox_notify.disabled = false;
+            }
+        }
+        
+        function notification (type, title, text, reload) {
+            return swal({
+                title: title,
+                text: text,
+                type: type,
+                confirmButtonText: "Confirm",
+            }, function () {
+                if (reload) {
+                    window.location.reload();
+                }
+            });
+        }
+        
+        function swal_confirm(type, title, text, callback) {
+            return swal({
+                title: title,
+                text: text,
+                type: type,
+                confirmButtonText: "Yes",
+                confirmButtonColor: "#DD6B55",
+                showCancelButton: true,
+                closeOnConfirm: false,
+            }, callback);
+        }
+    
         $("#reservation-reset-button").on("click", function() {
             window.location.reload();
         })
     
         $("#reservation-form").on("submit", function(){
-        
+            var team_id = document.getElementById("reservation-team").value;
+            var sync_google_calender = false;
+            var send_notification = false;
             var title = document.getElementById("reservation-title").value;
             title = title ? title : "untitled";
-            var reservation_type = document.getElementById("reservation-type").selectedIndex;
+            var making_noise = document.getElementById("is-making-noise").selectedIndex;
+            var quiet_req = 1;          // default is "No"(1)
+            var reservation_type = 3;   // default is "No"(1) + "No"(1) = 3 (11)
             var description = document.getElementById("reservation-description").value;
+            
+            
+            {% if has_google_token %}
+            sync_google_calender = document.getElementById("checkbox_sync").checked;
+            send_notification = document.getElementById("checkbox_notify").checked;
+            {% endif %}
             
             var reservations = $('#calendar').fullCalendar( 'clientEvents', function(event) {
                 if (event.is_new == 'new') {
@@ -401,8 +379,7 @@
             });
             
             if (reservations.length > 1) {
-                alert("You can only make 1 reservation each time!");
-                //location.reload(true);
+                notification("warning", "Warning", "You can only make 1 reservation each time!", false);
                 return false;
             }
             else if (reservations.length == 0) {
@@ -416,12 +393,9 @@
             var start_time = new Date(reservation.start.toISOString());
             var end_time;
 
-            //alert(reservation.start);
-           // alert(start_time);
             if (reservation.allDay) {
                 // Convert UTC time to local time 
                 start_time = new Date(start_time.getUTCFullYear(), start_time.getUTCMonth(), start_time.getUTCDate());
-               //alert(start_time);
                
                 if (reservation.end == null) {
                     end_time = new Date(start_time);
@@ -441,46 +415,125 @@
                 }
             }
             
-           // alert(end_time);
             
-            // return;
+            // Get reservation type
+            // 0: not valid 
+            // 1: not making noise + require quietness
+            // 2: making noise
+            // 3: not making noise + not require quietness
+            if (making_noise == 1) {
+                quiet_req = document.getElementById("quiet-req").selectedIndex;
+            }
+            reservation_type = (quiet_req << 1) + making_noise;
             
-            var user_id = 1;
-            var ret = true;
-            
-            if(!confirm('Make an reservation from ' + start_time.toLocaleString() + ' to ' + end_time.toLocaleString() + '?')){
-		        return false;
-			}
-            
-            $.ajax({
-                url: '{% url "reservation_create" %}',
-                type: "POST",
-                data: JSON.stringify({ 
-                    title: title,  
-                    reservation_type: reservation_type, 
-                    description: description, 
-                    zone_id: zone_id, 
-                    zone_name: zone_name,
-                    start_time: start_time, 
-                    end_time: end_time, 
-                    user_id: user_id,
-                    is_long_term: reservation.allDay
-                }),
-                success: function(data) {
-                    console.log(data);
-                    if (data.error_code == 0) {
-                        alert("SUCCESS");
-                        ret = true;
-                    } else {
-                        alert("Oops! We have encountered an error " + data.error_msg + "!");
-                        ret = false;
+            swal_confirm("warning", "Confirm", 'Make an reservation from ' + start_time.toLocaleString() + ' to ' + end_time.toLocaleString() + '?', 
+            function(isConfirm){
+                if (isConfirm) {
+                    var warning = false;
+                    $.ajax({
+                        async: false,
+                        url: '{% url "reservation_create" %}',
+                        type: "POST",
+                        data: JSON.stringify({ 
+                            team_id: team_id,
+                            sync_google_calender: sync_google_calender,
+                            send_notification: send_notification,
+                            title: title,  
+                            reservation_type: reservation_type, 
+                            description: description, 
+                            zone_id: zone_id, 
+                            zone_name: zone_name,
+                            start_time: start_time, 
+                            end_time: end_time, 
+                            is_long_term: reservation.allDay,
+                            ignore_warning: false,
+                        }),
+                        success: function(data) {
+                            console.log(data);
+                            if (data.error_code == 0) {
+                                notification("success", "Success", "Reservation creation success", true);
+                            } else if (data.error_code == {{warning_code}}) { // Quietness conflict or training conflict
+                                warning = true;
+                                quietness_conflict = data.quietness_conflict;
+                                training_conflict = data.training_conflict;
+                            } else {
+                                notification("error", "Error", "Oops! An error occurred: " + data.error_msg, false);
+                            }
+                        },
+                    });
+                
+                    if (warning) {
+                       // Quietnees confliction with existing reservation(s)
+                        if ( quietness_conflict ) {
+                            if (!confirm('WARN: There is already another reservation that might be noisy on the time you selected. Do you want to continue to make the reservation?')){
+                		        return false;
+                			} 
+                        }
+                        
+                        // Confliction with existing training
+                        if ( training_conflict ) {
+                            if (!confirm('WARN: There is a training overlapped with the time period of your reservation, your reservation during that period might not be available. Do you want to continue to make the reservation?')){
+                		        return false;
+                			} 
+                        }
+            			
+            			
+                        // Continue to make the reservation with ignore_warning 
+        			    $.ajax({
+        			        async: false,
+                            url: '{% url "reservation_create" %}',
+                            type: "POST",
+                            data: JSON.stringify({ 
+                                team_id: team_id,
+                                sync_google_calender: sync_google_calender,
+                                send_notification: send_notification,
+                                title: title,  
+                                reservation_type: reservation_type, 
+                                description: description, 
+                                zone_id: zone_id, 
+                                zone_name: zone_name,
+                                start_time: start_time, 
+                                end_time: end_time, 
+                                is_long_term: reservation.allDay,
+                                ignore_warning: true,
+                            }),
+                            success: function(data) {
+                                console.log(data);
+                                if (data.error_code == 0) {
+                                    notification("success", "Success", "Reservation creation success", true);
+                                } else {
+                                    notification("error", "Error", "Oops! An error occurred: " + data.error_msg, false);
+                                }
+                            },
+                        });
                     }
-                },
+                }
             });
         
-            return ret;
+            return false;
         });
 
+        // Reservation form option variations
+        $('#is-making-noise').change(function(){
+            var making_noise = document.getElementById("is-making-noise");
+            var making_noise_div = document.getElementById("is-making-noise-div");
+            
+            if(making_noise.selectedIndex == 1) {   // Not making noise
+                // Ask if it requires quite reservation
+                making_noise_div.insertAdjacentHTML("afterend",
+                '\
+                    <div class="form-group" id="quiet-req-div">\
+                        <label>Do you need a reservation with a quiet environment?</label> \
+                        <select class="form-control m-b" id="quiet-req">\
+                            <option>Yes</option>\
+                            <option selected="selected">No</option>\
+                        </select>\
+                    </div>\
+                ');
+            } else if (making_noise.selectedIndex == 0) {   // Makeing noise
+                document.getElementById("quiet-req-div").remove();
+            }
+        })
     </script>
 
 </body>

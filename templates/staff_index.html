@@ -21,78 +21,74 @@
 	        {% include 'common/logout.html' %}
 	        <div class="row wrapper border-bottom white-bg page-heading">
 	            <div class="col-lg-10">
-	                <h2>Authorization</h2>
+	                <h2>Staff Management</h2>
 	                <ol class="breadcrumb">
 	                    <li>
-	                        <a href="index.html">Home</a>
+	                        <a href='{% url "index" %}'>Home</a>
 	                    </li>
 	                    <li>
-	                        <a>Users</a>
+	                        Users
 	                    </li>
 	                    <li class="active">
-	                        <strong>Authorization</strong>
+	                        <strong>Staff Management</strong>
 	                    </li>
 	                </ol>
 	            </div>
 	            <div class="col-lg-2">
-
+	
 	            </div>
 	        </div>
-
+	
 	        <div class="wrapper wrapper-content animated fadeInRight ecommerce">
- 
+	<!-- 
 	            <div class="ibox-content m-b-sm border-bottom">
 	                <div class="row">
-		                <div class="col-lg-12">
-		                    <div class="ibox float-e-margins">
-		                        <div class="ibox-content">
-		                            <p>
-		                                Search By Email <span class="text-muted"></span>
-		                            </p>
-		                            <form id="user_search" action="{% url 'authority_user' %}">
-										<div class="input-group"><input type="text" name="keyWord" id="keyWord" value="{{key_word}}" placeholder="email..." class="typeahead_1 form-control">
-											<span class="input-group-btn">
-											<button type="submit" class="btn btn-primary">Go!</button>
-											</span>
-										</div>
-									</form>
-		                        </div>
-		                    </div>
-		                </div>
+	                    <div class="col-sm-4">
+	                        <div class="form-group">
+	                            <label class="control-label" for="order_id">Team Name</label>
+	                            <input type="text" id="order_id" name="order_id" value="" placeholder="Order ID" class="form-control">
+	                        </div>
+	                    </div>
+	                    <div class="col-sm-4">
+	                        <div class="form-group">
+	                            <label class="control-label" for="status">Reserve status</label>
+	                            <input type="text" id="status" name="status" value="" placeholder="Status" class="form-control">
+	                        </div>
+	                    </div>
+	                    <div class="col-sm-4">
+	                        <div class="form-group">
+	                            <label class="control-label" for="customer">Zone Name</label>
+	                            <input type="text" id="customer" name="customer" value="" placeholder="Customer" class="form-control">
+	                        </div>
+	                    </div>
 	                </div>
 	            </div>
-
+	-->
 	            <div class="row">
 	                <div class="col-lg-12">
 	                    <div class="ibox">
 	                        <div class="ibox-content">
+	
 	                            <table class="footable table table-stripped toggle-arrow-tiny" data-page-size="15">
 	                                <thead>
 		                                <tr>
-		                                    <th data-toggle="true">ID</th>
 		                                    <th data-hide="phone">Staff Name</th>
-		                                    <th data-hide="phone">Role </th>
 		                                    <th data-hide="phone">Email</th>
-		                                    <th data-hide="phone">Created At</th>
+		                                    <th data-hide="phone">Join Time</th>
 		                                    <th data-hide="phone">Last Login</th>
 		                                    <th class="text-right">Action</th>
 		                                </tr>
 	                                </thead>
 	                                <tbody id="reserveList">
-	                                	{% for ul in user_list %}
-		                                <tr id="userId_{{ul.id}}">
-		                                    <td>{{ul.id}}</td>
-		                                    <td>{{ul.username}}</td>
-		                                    <td>{{ul.role_id.role_name}}</td>
-		                                    <td>{{ul.email}}</td>
-		                                    <td>{{ul.date_joined}}</td>
-		                                    <td>{{ul.last_login}}</td>
+	                                	{% for staff in staff_list %}  
+		                                <tr id="userId_{{staff.id}}">
+		                                    <td>{{staff.username}}</td>
+		                                    <td>{{staff.email}}</td>
+		                                    <td>{{staff.date_joined}}</td>
+		                                    <td>{{staff.last_login}}</td>
 		                                    <td class="text-right">
 		                                        <div class="btn-group">
-		                                        	<button id="authSubmit" onclick="window.location.href='authUserDetail/{{ul.id}}/' " class="btn btn-success btn-sm authSubmit">Authorize</button>
-		                                        </div>
-		                                        <div class="btn-group">
-		                                            <button id="deleteSubmit" onclick="deleteItem('{{ul.id}}')" class="btn btn-danger btn-sm deleteSubmit">Delete</button>
+		                                            <button id="deleteSubmit" onclick="deleteItem('{{staff.id}}')" class="btn btn-danger btn-sm deleteSubmit">Delete</button>
 		                                        </div>
 		                                    </td>
 		                                </tr>
@@ -129,55 +125,44 @@
     <script src="/static/js/inspinia.js"></script>
     <script src="/static/js/plugins/pace/pace.min.js"></script>
 
+    <!-- Sweet alert -->
+    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
     <!-- FooTable -->
     <script src="/static/js/plugins/footable/footable.all.min.js"></script>
-    <!-- Sweet alert -->
-    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
-    <!-- Typehead -->
-    <script src="/static/js/plugins/typehead/bootstrap3-typeahead.min.js"></script>
-    <!-- Sweet alert -->
-    <script src="/static/js/plugins/sweetalert/sweetalert.min.js"></script>
-	<script>
-		$(document).ready(function(){
-			var eList = '{{ email_list }}';
-			var emails = eList.split(",");
-			$('.typeahead_1').typeahead({
-		        source: emails
-		    });
-		});
 
+    <!-- Page-Level Scripts -->
+	<script>
 		function deleteItem(id) {
-			var role_id = 1;
 			swal({
-                title: "Are you sure to DELETE ?",
-                text: "Your will not be able to recover this record!",
+                title: "Move this user to Member ?",
+                text: "You can recover this record at Authority User! ",
                 type: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#DD6B55",
-                confirmButtonText: "Yes, DELETE it!",
-                cancelButtonText: "No, Cancel !",
+                confirmButtonText: "Yes, Do it!",
+                cancelButtonText: "No, Cancel!",
                 closeOnConfirm: false,
                 closeOnCancel: true },
             function (isConfirm) {
-       			if(isConfirm){
-       		        $.ajax({
-       		            url:'{% url "user_delete" %}',
-       		            data:{id: id, role_id: role_id},
+           		if(isConfirm){
+           	        $.ajax({
+           	            url:'{% url "authority_update" %}',
+           	            data:{userId: id, roleId: 3},
                         type: "GET",
-       		            success:function(msg){
-		                	swal({
-	                            title:"Delete Success",
-	                            text: "User has been DELETED",
-	                            type: "success",
-	                            confirmButtonText: "Confirm",
-	                        }, function () {
-	                            window.location.reload();
-	                        });
-       		            },
-       		            error:function(xhr,textstatus,thrown){
-       		            }
-       		        });
-       			}
+           	            success:function(msg){
+                            swal({
+                                title:"Deleted",
+                                text: "Your record has been DELETED",
+                                type: "success",
+                                confirmButtonText: "Confirm",
+                            }, function () {
+                                window.location.reload();
+                            });
+           	            },
+           	            error:function(xhr,textstatus,thrown){
+           	            }
+           	        });
+           		}
             });
 		}
 
