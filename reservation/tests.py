@@ -6,30 +6,75 @@ import json
 from dateutil import parser
 from pytz import timezone
 
+from .models import *
 from .const import *
 from .errors import *
 import numpy as np
 import random
+import os
 
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 
 # Create your tests here.
 
+SHARED_SPACE_ADMIN_PASSWORD = os.environ['SHARED_SPACE_ADMIN_PASSWORD']
+
+class TestData(object):
+    def init_database(self):
+        self.role_admin = Role.objects.get(id = 0)
+        self.role_staff = Role.objects.get(id = 1)
+        self.role_team_leader = Role.objects.get(id = 2)
+        self.role_member = Role.objects.get(id = 3)
+        
+         # Test data
+        self.test_member_1 = User(username = 'test_member_1', email = 'test_member_1@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = self.role_member)
+        self.test_member_1.set_password('123')
+        self.test_member_1.save()
+        
+        self.test_member_2 = User(username = 'test_member_2', email = 'test_member_2@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = self.role_member)
+        self.test_member_2.set_password('123')
+        self.test_member_2.save()
+        
+        #UserModel = apps.get_model('reservation', 'User')
+        User.objects.create(username = "test_admin_1", email = "test_admin_1@tamu.edu", role_id = self.role_admin)
+        User.objects.create(username = "test_admin_2", email = "test_admin_2@tamu.edu", role_id = self.role_admin)
+        User.objects.create(username = "test_staff_1", email = "test_staff_1@tamu.edu", role_id = self.role_staff)
+        User.objects.create(username = "test_staff_2", email = "test_staff_2@tamu.edu", role_id = self.role_staff)
+        #User.objects.create(id = 3, username = "test_lead_1", email = "test_lead_1@tamu.edu", role_id = 2)
+        #User.objects.create(id = 3, username = "test_lead_2", email = "test_lead_2@tamu.edu", role_id = 2)
+        #user5 = UserModel.objects.create(username = "test_member_1", email = "test_member_1@tamu.edu", role_id = 2)
+        self.test_member_1 = User.objects.get(username = "test_member_1")
+        self.test_member_2 = User.objects.get(username = "test_member_2")
+        self.test_member_3 = User.objects.create(username = "test_member_3", email = "test_member_3@tamu.edu", role_id = self.role_member)
+        User.objects.create(username = "test_member_4", email = "test_member_4@tamu.edu", role_id = self.role_member)
+        User.objects.create(username = "test_member_5", email = "test_member_5@tamu.edu", role_id = self.role_member)
+    
+    
+       # Team = apps.get_model('reservation', 'Team')
+        self.team1 = Team.objects.create(name = "test_team_1", leader_id = self.test_member_1)
+        Team.objects.create(name = "test_team_2")
+        
+        #TeamMember = apps.get_model('reservation', 'TeamMember')
+        TeamMember.objects.create(team_id = self.team1, user_id = self.test_member_1)
+        TeamMember.objects.create(team_id = self.team1, user_id = self.test_member_2)
+        TeamMember.objects.create(team_id = self.team1, user_id = self.test_member_3)
+
 # Test modals
-class ReservationTestCase(TestCase):
+class ReservationTestCase(TestCase, TestData):
     def setUp(self):
         self.c = Client()
 
+        self.init_database()
         #Reservation.objects.create(title = 'setup1', reservation_type = 0, start_time = '2000-01-01 12:00:00', end_time = '2000-01-01 12:30:00', user_id = 1)
 
     def test_is_valid(self):
-        reservation1 = Reservation(title = 'test', reservation_type = 0, start_time = '2022-01-01 13:00:00',
-            end_time = '2022-01-01 14:00:00', user_id = 1)
-        reservation2 = Reservation(title = 'test', reservation_type = 3, start_time = '2022-01-01 13:00:00',
-            end_time = '2022-01-01 14:00:00', user_id = 1)
-        reservation3 = Reservation(title = 'test', reservation_type = 0, start_time = '2022-01-01 15:00:00',
-            end_time = '2022-01-01 14:00:00', user_id = 1)
+        reservation1 = Reservation(reservation_type = 1, start_time = '2022-01-01 13:00:00', user_id = self.test_member_1, team_id = self.team1, 
+            end_time = '2022-01-01 14:00:00')
+        reservation2 = Reservation(reservation_type = 0, start_time = '2022-01-01 13:00:00', user_id = self.test_member_1, team_id = self.team1,
+            end_time = '2022-01-01 14:00:00')
+        reservation3 = Reservation(reservation_type = 1, start_time = '2022-01-01 15:00:00', user_id = self.test_member_1, team_id = self.team1,
+            end_time = '2022-01-01 14:00:00')
         
         self.assertEqual(reservation1.is_valid(), True)
         self.assertEqual(reservation2.is_valid(), False)
@@ -37,27 +82,29 @@ class ReservationTestCase(TestCase):
         
         
     def test_has_confliction(self):
-        Reservation.objects.create(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1)
-        Reservation.objects.create(zone_id = 2, reservation_type = 0, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1)
+        Reservation.objects.create(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00')
+        Reservation.objects.create(zone_id = 2, reservation_type = 2, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00')
         
-        self.assertEqual(Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1).has_confliction(), True)
-        self.assertEqual(Reservation(zone_id = 3, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1).has_confliction(), False)
-        self.assertEqual(Reservation(zone_id = 3, reservation_type = 0, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1).has_confliction(), True)
-        self.assertEqual(Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1).has_confliction(), True)
+        self.assertEqual(Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00').has_confliction()[0], True)
+        self.assertEqual(Reservation(zone_id = 3, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00').has_confliction()[0], False)
+        self.assertEqual(Reservation(zone_id = 3, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00').has_confliction()[1], True)
+        self.assertEqual(Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00').has_confliction()[0], False)
 
         
         #response = c.post('/reservation/create', {'title': "test", "reservation_type": 0, start_time = 'xxx', end_time = "xxx"})
         
     def test_create_success(self):
+        self.c.login(username='admin', password=SHARED_SPACE_ADMIN_PASSWORD)
+        #self.c.login(username='test_member_1', password='123')
+        
         resp = self.c.post('/reservation/create', json.dumps({
             'title': 'test', 
-            'reservation_type': 0, 
-            'is_long_term': False,
+            'reservation_type': 3, 
             'zone_id': 1, 
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 13:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -68,15 +115,16 @@ class ReservationTestCase(TestCase):
         
        
     def test_create_fail(self):
+        self.c.login(username='admin', password=SHARED_SPACE_ADMIN_PASSWORD)
+        
         resp = self.c.post('/reservation/create', json.dumps({
             'title': 'test', 
-            'reservation_type': 0, 
-            'is_long_term': False,
+            'reservation_type': 1, 
             'zone_id': 1, 
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 13:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -86,17 +134,15 @@ class ReservationTestCase(TestCase):
         self.assertEqual(data["error_code"], 0)
         
         
-        
         # Since this reservation is conflicted with the previous one, it should fail
         resp = self.c.post('/reservation/create', json.dumps({
             'title': 'test', 
-            'reservation_type': 0, 
-            'is_long_term': False,
+            'reservation_type': 1, 
             'zone_id': 1, 
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 14:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -108,12 +154,11 @@ class ReservationTestCase(TestCase):
         # Fail since missing required field
         resp = self.c.post('/reservation/create', json.dumps({
             'title': 'test', 
-            'reservation_type': 0, 
-            'is_long_term': False,
+            'reservation_type': 1, 
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 14:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -131,7 +176,7 @@ class ReservationTestCase(TestCase):
             'zone_name': 'zone 1', 
             'start_time': '2022-03-14 12:00:00', 
             'end_time': '2022-03-14 14:00:00', 
-            'user_id': 1,
+            'team_id': self.team1.id,
             
         }), content_type="application/json")
         
@@ -143,10 +188,10 @@ class ReservationTestCase(TestCase):
     def test_list(self):
         Reservation.objects.all().delete()
         reservations = [
-            Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1),
-            Reservation(zone_id = 2, reservation_type = 0, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1),
-            Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1),
-            Reservation(zone_id = 4, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1),
+            Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 2, reservation_type = 3, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 4, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
         ]
 
         for r in reservations:
@@ -170,15 +215,15 @@ class ReservationTestCase(TestCase):
             list_end_time, end_time = parser.parse(r["end_time"]).replace(tzinfo=timezone('UTC')), parser.parse(reservations[i].end_time).replace(tzinfo=timezone('UTC'))
             self.assertEqual(list_start_time == start_time, False) 
             self.assertEqual(list_end_time == end_time, False)
-            self.assertEqual(r["user_id"], reservations[i].user_id) 
+            self.assertEqual(r["user_id"], reservations[i].user_id.id) 
         
     def test_delete(self):
         Reservation.objects.all().delete()
         reservations = [
-            Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1),
-            Reservation(zone_id = 2, reservation_type = 0, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1),
-            Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = 1),
-            Reservation(zone_id = 4, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = 1),
+            Reservation(zone_id = 1, reservation_type = 1, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 2, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 3, reservation_type = 2, start_time = '2000-01-03 12:00:00', end_time = '2000-01-03 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
+            Reservation(zone_id = 4, reservation_type = 1, start_time = '2000-01-02 12:00:00', end_time = '2000-01-02 12:30:00', user_id = self.test_member_1, team_id = self.team1,),
         ]
         
         id = 0
@@ -198,13 +243,13 @@ class ReservationTestCase(TestCase):
         # Check if it is deleted
         self.assertEqual(len(Reservation.objects.filter(id=id)), 0)
 
-    def test_zone_list(self):
-        self.c.login(username='admin', password='admin')
-        resp = self.c.get('/zone/list')
-        self.assertEqual(resp.status_code, 200)
+    # def test_zone_list(self):
+    #     self.c.login(username='admin', password=SHARED_SPACE_ADMIN_PASSWORD)
+    #     resp = self.c.get('/zone/list')
+    #     self.assertEqual(resp.status_code, 200)
         
-        data = json.loads(resp.content)
-        self.assertEqual(data["error_code"], 0)  
+    #     data = json.loads(resp.content)
+    #     self.assertEqual(data["error_code"], 0)  
 
 
 # Initialize the database to have 8 users and 7 teams, where 
@@ -370,7 +415,7 @@ class TeamListViewTestCase(TestCase):
             users = resp.context['users']
             self.assertEqual(len(users), self.n_users - 2) # exclude the admin and the staff
             
-            self.assertEqual(resp.context['team_list_title'], 'Team List')
+            self.assertEqual(resp.context['team_list_title'], 'Team Management')
         
     def test_member_view(self): 
         for i in range(2, self.n_users):

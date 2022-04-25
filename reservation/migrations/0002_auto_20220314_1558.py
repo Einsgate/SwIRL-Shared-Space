@@ -26,46 +26,13 @@ def init(apps, schema_editor):
     role_team_leader = Role.objects.create(id = 2, role_name = "team leader")
     role_member = Role.objects.create(id = 3, role_name = "member")
     
-    # Test data
     # Default admin
     SHARED_SPACE_ADMIN_PASSWORD = os.environ['SHARED_SPACE_ADMIN_PASSWORD']
     superuser = User(username = 'admin', email = 'admin@admin.net', is_active = True, is_superuser = True, is_staff = True, role_id = role_admin)
     superuser.set_password(SHARED_SPACE_ADMIN_PASSWORD)
     superuser.save()
     
-    test_member_1 = User(username = 'test_member_1', email = 'test_member_1@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = role_member)
-    test_member_1.set_password('123')
-    test_member_1.save()
-    
-    test_member_2 = User(username = 'test_member_2', email = 'test_member_2@tamu.edu', is_active = True, is_superuser = True, is_staff = True, role_id = role_member)
-    test_member_2.set_password('123')
-    test_member_2.save()
-    
-    #UserModel = apps.get_model('reservation', 'User')
-    User.objects.create(username = "test_admin_1", email = "test_admin_1@tamu.edu", role_id = role_admin)
-    User.objects.create(username = "test_admin_2", email = "test_admin_2@tamu.edu", role_id = role_admin)
-    User.objects.create(username = "test_staff_1", email = "test_staff_1@tamu.edu", role_id = role_staff)
-    User.objects.create(username = "test_staff_2", email = "test_staff_2@tamu.edu", role_id = role_staff)
-    #User.objects.create(id = 3, username = "test_lead_1", email = "test_lead_1@tamu.edu", role_id = 2)
-    #User.objects.create(id = 3, username = "test_lead_2", email = "test_lead_2@tamu.edu", role_id = 2)
-    #user5 = UserModel.objects.create(username = "test_member_1", email = "test_member_1@tamu.edu", role_id = 2)
-    test_member_1 = User.objects.get(username = "test_member_1")
-    test_member_2 = User.objects.get(username = "test_member_2")
-    test_member_3 = User.objects.create(username = "test_member_3", email = "test_member_3@tamu.edu", role_id = role_member)
-    User.objects.create(username = "test_member_4", email = "test_member_4@tamu.edu", role_id = role_member)
-    User.objects.create(username = "test_member_5", email = "test_member_5@tamu.edu", role_id = role_member)
-
-
-   # Team = apps.get_model('reservation', 'Team')
-    team1 = Team.objects.create(name = "test_team_1", leader_id = test_member_1)
-    Team.objects.create(name = "test_team_2")
-    
-    #TeamMember = apps.get_model('reservation', 'TeamMember')
-    TeamMember.objects.create(team_id = team1, user_id = test_member_1)
-    TeamMember.objects.create(team_id = team1, user_id = test_member_2)
-    TeamMember.objects.create(team_id = team1, user_id = test_member_3)
-    
-    
+    # Google auth config
     from django.contrib.sites.models import Site
     from allauth.socialaccount.models import SocialApp, SocialAccount
     
@@ -80,7 +47,6 @@ def init(apps, schema_editor):
     social_app.sites.add(site) # set site 
             
         
-
     #leftNav
     LeftNav.objects.create(id = 1, name = "Home", url = "index", fid=0, description = "")
     LeftNav.objects.create(id = 2, name = "Staff Management", url = "/usermng/staff", fid=1, description = "")

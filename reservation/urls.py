@@ -25,7 +25,7 @@ urlpatterns = [
     path('reservation/history', views.reservation_history, name='reservation_history'),  
     path('reservation/create', views.reservation_create, name='reservation_create'),
     path('reservation/delete', views.reservation_delete, name='reservation_delete'),
-    path('zone/list', views.zone_list, name='zone_list'),
+    # path('zone/list', views.zone_list, name='zone_list'),
 
     # team list
     path('team/view', views.team_view, name='team_view'), 

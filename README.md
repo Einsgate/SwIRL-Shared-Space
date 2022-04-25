@@ -19,7 +19,19 @@ Run the following command to install pipenv:
 pip3 install pipenv
 ```
 
+### Setup Environment Variables
 
+Some of the secrets (e.g. API secret and default admin password) are read from the environment variables. Below are the variables you need to setup before running the application:
+
+```
+export SHARED_SPACE_GOOGLE_CLIENT_ID=<Client ID from the secret file>
+export SHARED_SPACE_GOOGLE_SECRET=<Secret from the secret file>
+export SHARED_SPACE_ADMIN_PASSWORD=<Default admin password>
+```
+
+Replace those values given in the encrpted secret file and then setup these variables in your local ```~/.bashrc``` file.
+
+On heroku, you need to manually setup the environment variables for your application runtime.
 
 ### Run Application
 
