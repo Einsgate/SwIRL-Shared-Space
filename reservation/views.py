@@ -783,8 +783,7 @@ def training_create(request):
         #send mail to conflict reservation
         conflict_list = Reservation.conflictWithTraining(training)
         for r in conflict_list:
-            print(r)
-            #send_mail('Reservation Conflict', 'Your Reservation is conflicted by a training', '394887350@qq.com', ['hibernatehou@tamu.edu'], fail_silently=False)
+            send_mail('Reservation Conflict', 'Your Reservation is conflicted by a training['+training.name+']', '394887350@qq.com', [r.user_id.email], fail_silently=False)
 
         return JsonResponse({
             "error_code": 0,
