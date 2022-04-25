@@ -70,9 +70,10 @@
                                 <thead>
 	                                <tr>
 	                                    <th data-hide="phone">Training Name</th>
-	                                    <th data-hide="all">Description</th>
+	                                    <th data-hide="phone">Description</th>
 	                                    <th data-hide="phone">Start Time</th>
 	                                    <th data-hide="phone">End Time</th>
+	                                    <th data-hide="phone">Status</th>
 	                                    <th class="text-right">Action</th>
 	                                </tr>
                                 </thead>
@@ -83,6 +84,17 @@
 	                                    <td>{{t.description}}</td>
 	                                    <td>{{t.start_time}}</td>
 	                                    <td>{{t.end_time}}</td>
+	                                    <td>
+	                                    {% if t.training_status == 2 %}
+	                                    	<span class="label label-danger">Finished</span>
+	                                    {% elif t.training_status == 3 %}
+	                                    	<span class="label label-success"> Graded </span>
+	                                   	{% elif t.training_status == 1 %}
+	                                    	<span class="label label-primary">In progress</span>
+	                                   	{% else %}
+	                                   		<span class="label label-warning">Not Start</span>
+	                                    {% endif %}
+	                                    </td>
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
 	                                            <button id="applySubmit" onclick="applyItem('{{t.id}}')" class="btn btn-primary btn-sm applySubmit">Register</button>

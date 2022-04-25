@@ -65,14 +65,14 @@
 	                                    <td>{{t.training_id.end_time}}</td>
 	                                    <td>{{t.registration_time}}</td>
 	                                    <td>
-	                                    {% if t.training_status == 0 %}
-	                                    	<span class="label label-warning">Not Start</span>
-	                                    {% elif t.training_status == 1 %}
-	                                    	<span class="label label-primary">In Process</span>
-	                                   	{% elif t.training_status == 2 %}
-	                                   		<span class="label label-danger">Finished</span>
-	                                   	{% elif t.training_status == 3 %}
-	                                   		<span class="label label-success">Graded</span>
+	                                    {% if t.training_status == 2 %}
+	                                    	<span class="label label-danger">Finished</span>
+	                                    {% elif t.training_status == 3 %}
+	                                    	<span class="label label-success"> Graded </span>
+	                                   	{% elif t.training_status == 1 %}
+	                                    	<span class="label label-primary">In progress</span>
+	                                   	{% else %}
+	                                   		<span class="label label-warning">Not Start</span>
 	                                    {% endif %}
 	                                    </td>
 	                                    <td>
@@ -87,7 +87,7 @@
 	                                    <td class="text-right">
 	                                        <div class="btn-group">
 	                                        	{% if t.training_status == 0 %}
-	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn btn-danger btn-sm deleteSubmit">Un-Register</button>
+	                                            <button id="deleteSubmit" onclick="deleteItem('{{t.id}}')" class="btn btn-danger btn-sm deleteSubmit">Unregister</button>
 	                                            {% endif %}
 	                                        </div>
 	                                    </td>

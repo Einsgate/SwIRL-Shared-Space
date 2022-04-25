@@ -718,6 +718,7 @@ def training_result_update(request):
             });
         training = TrainingDetail.findById(params['id'])
         training.training_result = params['status']
+        training.training_status = 3
         training.save()
 
         return JsonResponse({
@@ -766,33 +767,33 @@ def training_update(request):
 
 @csrf_exempt 
 def training_create(request):
-    try:
-        if request.method == 'POST':
-            # Check required fields
-            params = json.loads(request.body)
-            if 'name' not in params or 'startDate' not in params or 'endDate' not in params:
-                return JsonResponse({
-                    "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
-                    "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
-                });
-
-            zone = Zone.findById(params['zoneId'])
-            training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id =zone, instructor_id = 0)
-            training.save()
+    if request.method == 'POST':
+        # Check required fields
+        params = json.loads(request.body)
+        if 'name' not in params or 'startDate' not in params or 'endDate' not in params:
             return JsonResponse({
-                "error_code": 0,
-                "training_id": training.id,
-                "training_name": training.name,
-                "training_description": training.description,
-                "training_instructor_id": training.instructor_id,
-                "training_start_time": training.start_time,
-                "training_end_time": training.end_time
-            })
-    except Exception as e:
+                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
+            });
+
+        zone = Zone.findById(params['zoneId'])
+        training = Training(name = params['name'], description = params['desc'], start_time = parse_datetime(params['startDate']), end_time = parse_datetime(params['endDate']), zone_id =zone, instructor_id = 0)
+        training.save()
+
+        #send mail to conflict reservation
+        conflict_list = Reservation.conflictWithTraining(training)
+        for r in conflict_list:
+            print(r)
+            #send_mail('Reservation Conflict', 'Your Reservation is conflicted by a training', '394887350@qq.com', ['hibernatehou@tamu.edu'], fail_silently=False)
+
         return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_msg": str(e),
-            # I don't know reservation_create why here is error_message instead error_msg. Is that just a typo?
+            "error_code": 0,
+            "training_id": training.id,
+            "training_name": training.name,
+            "training_description": training.description,
+            "training_instructor_id": training.instructor_id,
+            "training_start_time": training.start_time,
+            "training_end_time": training.end_time
         })
 
 @csrf_exempt
@@ -800,16 +801,16 @@ def training_apply(request):
     if request.method == 'GET':
         params = request.GET
     key_word = "";
-    my_training = TrainingDetail.list_all(request.user.id);
+    my_training = TrainingDetail.list_all(request.user.id)
     oldIds = []
     for t in my_training:
         oldIds.append(t.training_id.id)
 
-    if 'keyWord' in params:
+    if 'keyWord' in params and len(params['keyWord']) >0 :
         key_word = params['keyWord']
         training_list = Training.findListByName(key_word)
     else:
-        training_list = Training.list_exception(oldIds);
+        training_list = Training.list_exception(oldIds)
 
     my_training_list_title = 'Training Registration'
     training_name = ""
@@ -842,30 +843,24 @@ def training_my_training(request):
 
 @csrf_exempt
 def training_apply_create(request):
-    try:
-        if request.method == 'GET':
-            # Check required fields
-            params = request.GET
+    if request.method == 'GET':
+        # Check required fields
+        params = request.GET
 
-        if 'training_id' not in params:
-            return JsonResponse({
-                "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
-                "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
-            })
-
-        user = User.findUserById(request.user.id)
-        training = Training.findById(params['training_id'])
-        my_training = TrainingDetail(user_id = user, training_id = training)
-        my_training.save()
-
+    if 'training_id' not in params:
         return JsonResponse({
-            "error_code": 0,
+            "error_code": ERR_MISSING_REQUIRED_FIELD_CODE, 
+            "error_msg": ERR_MISSING_REQUIRED_FIELD_MSG, 
         })
-    except Exception as e:
-        return JsonResponse({
-            "error_code": ERR_INTERNAL_ERROR_CODE,
-            "error_msg": str(e),
-        })
+
+    user = User.findUserById(request.user.id)
+    training = Training.findById(params['training_id'])
+    my_training = TrainingDetail(user_id = user, training_id = training)
+    my_training.save()
+
+    return JsonResponse({
+        "error_code": 0,
+    })
 
 @csrf_exempt
 def training_apply_delete(request):

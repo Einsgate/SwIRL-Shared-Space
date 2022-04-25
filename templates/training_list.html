@@ -69,11 +69,13 @@
 	                                    <td>{{t.end_time}}</td>
 	                                    <td>
 	                                    {% if t.training_status == 2 %}
-	                                    	<span class="label label-primary">Finished</span>
+	                                    	<span class="label label-danger">Finished</span>
 	                                    {% elif t.training_status == 3 %}
-	                                    	<span class="label label-warning"> Graded </span>
+	                                    	<span class="label label-success"> Graded </span>
+	                                   	{% elif t.training_status == 1 %}
+	                                    	<span class="label label-primary">In progress</span>
 	                                   	{% else %}
-	                                   		<span class="label label-success">In progress</span>
+	                                   		<span class="label label-warning">Not Start</span>
 	                                    {% endif %}
 	                                    </td>
 	                                    <td class="text-right">
@@ -180,9 +182,7 @@
     <script src="/static/js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
 
     <!-- Data picker -->
-    <!-- script src="/static/js/plugins/datapicker/bootstrap-datepicker.js"></script -->
     <script src="/static/js/plugins/datapicker/bootstrap-datetimepicker.js"></script>
-    <script src="/static/js/plugins/datapicker/bootstrap-datetimepicker.ua.js" charset="UTF-8"></script>
 
     <!-- Custom and plugin javascript -->
     <script src="/static/js/inspinia.js"></script>
@@ -298,47 +298,57 @@
             var startDate = $("#startTime").find("input").val();
             var endDate = $("#endTime").find("input").val();
             var zoneId = $("#zoneId").val();
-            swal({
-                title: "Are you sure to APPLY ?",
-                text: "You can find it at your training list!",
-                type: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#DD6B55",
-                confirmButtonText: "Yes, APPLY it!",
-                cancelButtonText: "No, Cancel !",
-                closeOnConfirm: false,
-                closeOnCancel: true },
-	            function (isConfirm) {
-	                if (isConfirm) {
-	                $.ajax({
-	                    url: '{% url "training_create" %}',
-	                    type: "POST",
-	                    data: JSON.stringify({ 
-	                        name: trainingName,
-	                        desc: trainingDesc,
-	                        startDate: startDate,
-	                        endDate: endDate,
-	                        zoneId:zoneId,
-	                        //instructorId:instructorId,
-	                        //leader_id: team_leader_id,
-	                    }),
-	                    success: function(data) {
-	                        if (data.error_code == 0) {
-	    	                	swal({
-	                                title:"Create Success",
-	                                text: "New Training has been created",
-	                                type: "success",
-	                                confirmButtonText: "Confirm",
-	                            }, function () {
-	                                window.location.reload();
-	                            });
-	                        } else {
-	                            swal("Failed!", "Oops! We have encountered an error " + data.error_msg + "!", "error");
-	                        }
-	                    }
-	                });
-	              }
-             });
+            var subsidy_start_time = new Date(startDate.replace("-", "/").replace("-", "/"));
+            var subsidy_end_time = new Date(endDate.replace("-", "/").replace("-", "/"));
+            if (subsidy_start_time > subsidy_end_time) {
+                swal({
+                    title: "WARNING!",
+                    text: "StartDate Must Bigger Than EndDate!",
+                    type: "warning"
+                });
+            }else{
+	            swal({
+	                title: "Are you sure to APPLY ?",
+	                text: "You can find it at your training list!",
+	                type: "warning",
+	                showCancelButton: true,
+	                confirmButtonColor: "#DD6B55",
+	                confirmButtonText: "Yes, APPLY it!",
+	                cancelButtonText: "No, Cancel !",
+	                closeOnConfirm: false,
+	                closeOnCancel: true },
+		            function (isConfirm) {
+		                if (isConfirm) {
+		                $.ajax({
+		                    url: '{% url "training_create" %}',
+		                    type: "POST",
+		                    data: JSON.stringify({ 
+		                        name: trainingName,
+		                        desc: trainingDesc,
+		                        startDate: startDate,
+		                        endDate: endDate,
+		                        zoneId:zoneId,
+		                        //instructorId:instructorId,
+		                        //leader_id: team_leader_id,
+		                    }),
+		                    success: function(data) {
+		                        if (data.error_code == 0) {
+		    	                	swal({
+		                                title:"Create Success",
+		                                text: "New Training has been created",
+		                                type: "success",
+		                                confirmButtonText: "Confirm",
+		                            }, function () {
+		                                window.location.reload();
+		                            });
+		                        } else {
+		                            swal("Failed!", "Oops! We have encountered an error " + data.error_msg + "!", "error");
+		                        }
+		                    }
+		                });
+		              }
+	             });
+            }
         }
     </script>
 

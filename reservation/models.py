@@ -63,6 +63,10 @@ class Reservation(models.Model):
     def delete(id = 0):
         Reservation.objects.filter(id = id).delete()
 
+    @staticmethod
+    def conflictWithTraining(training):
+        return Reservation.objects.filter(Q(start_time__lt = training.end_time), Q(end_time__gt = training.start_time), Q(zone_id__exact = training.zone_id.id))
+
 class Role(models.Model):
     role_name = models.CharField(max_length = 255)
 
