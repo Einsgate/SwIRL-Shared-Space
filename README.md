@@ -90,6 +90,7 @@ Some of the secrets (e.g. API secret and default admin password) are read from t
 export SHARED_SPACE_GOOGLE_CLIENT_ID=<Client ID from the secret file>
 export SHARED_SPACE_GOOGLE_SECRET=<Secret from the secret file>
 export SHARED_SPACE_ADMIN_PASSWORD=<Default admin password>
+export SHARED_SPACE_SECRET_KEY=<Django serect key>
 ```
 
 Those secrets can be found in the encrypted file ```secrets.zip```.
