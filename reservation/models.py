@@ -60,7 +60,7 @@ class Reservation(models.Model):
         if user_id == 0:
             return Reservation.objects.all()
         else:
-            return Reservation.objects.filter(user_id = user_id)
+            return Reservation.objects.filter(team_id__teammember__user_id__exact = user_id)
         
     @staticmethod
     def delete(id = 0):
