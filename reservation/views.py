@@ -254,25 +254,28 @@ def reservation_create(request):
     #     })
 
 def reservation_history(request):
-    reservations = Reservation.list_all(0)
+    if request.user.role_id.id == ROLE_ADMIN or request.user.role_id.id == ROLE_STAFF:
+        is_super_user = True
+        reservations = Reservation.list_all()
+    else:
+        is_super_user = False
+        reservations = Reservation.list_all(request.user)
 
     left_nav = LeftNav.findById(5)
     request.session['fid'] = left_nav.fid
     request.session['cid'] = left_nav.id
 
     return render(request, "reservation_history.html", {
-       "reservations": reservations,
+        "is_super_user": is_super_user,
+        "reservations": reservations,
     })
 
 def reservation_list(request):
     if request.method == 'GET':
         params = request.GET
 
-        # Check required fields
-        if 'user_id' not in params:
-            reservations = Reservation.list_all()
-        else:
-            reservations = Reservation.list_all(params['user_id'])
+        reservations = Reservation.list_all()
+        
 
         ret = []
 

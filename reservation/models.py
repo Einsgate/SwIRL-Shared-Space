@@ -12,8 +12,8 @@ class Reservation(models.Model):
     description = models.CharField(max_length = 255, default = '')
     zone_id = models.IntegerField(default = 0)
     zone_name = models.CharField(max_length = 50, default = "noname")
-    user_id = models.ForeignKey('User', on_delete = models.SET_NULL, blank=True, null=True)
-    team_id = models.ForeignKey('Team', on_delete = models.SET_NULL, blank=True, null=True)
+    user_id = models.ForeignKey('User', on_delete = models.CASCADE, blank=True, null=True)
+    team_id = models.ForeignKey('Team', on_delete = models.CASCADE, blank=True, null=True)
     is_long_term = models.BooleanField(default = False)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -60,7 +60,7 @@ class Reservation(models.Model):
         if user_id == 0:
             return Reservation.objects.all()
         else:
-            return Reservation.objects.filter(user_id = user_id)
+            return Reservation.objects.filter(team_id__teammember__user_id__exact = user_id)
         
     @staticmethod
     def delete(id = 0):

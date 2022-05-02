@@ -21,7 +21,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_DB: sharedspace
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ${{ secrets.SHARED_SPACE_POSTGRES_PASSWORD }}
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -67,6 +67,8 @@ jobs:
           SHARED_SPACE_ADMIN_PASSWORD: ${{ secrets.SHARED_SPACE_ADMIN_PASSWORD }}
           SHARED_SPACE_GOOGLE_CLIENT_ID: ${{ secrets.SHARED_SPACE_GOOGLE_CLIENT_ID }}
           SHARED_SPACE_GOOGLE_SECRET: ${{ secrets.SHARED_SPACE_GOOGLE_SECRET }}
+          SHARED_SPACE_SECRET_KEY: ${{ secrets.SHARED_SPACE_SECRET_KEY }}
+          SHARED_SPACE_POSTGRES_PASSWORD: ${{ secrets.SHARED_SPACE_POSTGRES_PASSWORD }}
       
       - name: Update Coverage to Codecov
         uses: codecov/codecov-action@v1
